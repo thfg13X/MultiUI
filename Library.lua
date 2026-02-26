@@ -1526,7 +1526,7 @@ function multihubx:createwindow(config)
             end)
 
             local rowclick = Instance.new("TextButton")
-            rowclick.Size = UDim2.new(1, -66, 1, 0)
+            rowclick.Size = UDim2.new(1, -116, 1, 0)
             rowclick.BackgroundTransparency = 1
             rowclick.Text = ""
             rowclick.ZIndex = 2
