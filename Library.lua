@@ -1468,28 +1468,23 @@ function multihubx:createwindow(config)
 
         function tab:addkeybind(cfg)
             cfg = cfg or {}
-            local txt        = cfg.title    or "keybind"
-            local defaultkey = cfg.default  or "none"
+            local txt        = cfg.title   or "keybind"
+            local defaultkey = cfg.default or "none"
             local cb         = cfg.callback
 
             local currentkey = defaultkey
             local togstate   = false
             local listening  = false
 
-            table.insert(keybindregistry, {
-                title    = txt,
-                getkey   = function() return currentkey end,
-                getstate = function() return togstate end,
-            })
-
+            -- shared toggle bg (left side of row)
             local row = Instance.new("Frame")
-            row.Size = UDim2.new(1, 0, 0, 30)
+            row.Size = UDim2.new(1, 0, 0, 32)
             row.BackgroundColor3 = DARK3
             row.BorderSizePixel = 0
             row.Parent = page
 
             local lbl = Instance.new("TextLabel")
-            lbl.Size = UDim2.new(1, -100, 1, 0)
+            lbl.Size = UDim2.new(1, -110, 1, 0)
             lbl.Position = UDim2.new(0, 10, 0, 0)
             lbl.BackgroundTransparency = 1
             lbl.Text = txt
@@ -1499,164 +1494,163 @@ function multihubx:createwindow(config)
             lbl.TextXAlignment = Enum.TextXAlignment.Left
             lbl.Parent = row
 
+            -- toggle pill (same as addtoggle)
+            local togbg = Instance.new("Frame")
+            togbg.Size = UDim2.new(0, 36, 0, 18)
+            togbg.Position = UDim2.new(1, -108, 0.5, -9)
+            togbg.BackgroundColor3 = GREY5
+            togbg.BorderSizePixel = 0
+            togbg.Parent = row
+            makecorner(UDim.new(1,0), togbg)
+
+            local circle = Instance.new("Frame")
+            circle.Size = UDim2.new(0, 12, 0, 12)
+            circle.Position = UDim2.new(0, 3, 0.5, -6)
+            circle.BackgroundColor3 = GREY1
+            circle.BorderSizePixel = 0
+            circle.Parent = togbg
+            makecorner(UDim.new(1,0), circle)
+
+            -- keybind button (right side)
             local kbtn = Instance.new("TextButton")
-            kbtn.Size = UDim2.new(0, 88, 0, 22)
-            kbtn.Position = UDim2.new(1, -94, 0.5, -11)
+            kbtn.Size = UDim2.new(0, 58, 0, 20)
+            kbtn.Position = UDim2.new(1, -62, 0.5, -10)
             kbtn.BackgroundColor3 = GREY6
-            kbtn.Text = "[" .. string.lower(currentkey) .. "]"
-            kbtn.TextColor3 = GREY2
-            kbtn.TextSize = 11
+            kbtn.Text = currentkey == "none" and "[ -- ]" or ("[" .. string.lower(currentkey) .. "]")
+            kbtn.TextColor3 = GREY1
+            kbtn.TextSize = 10
             kbtn.Font = Enum.Font.GothamSemibold
             kbtn.BorderSizePixel = 0
             kbtn.Parent = row
             makestroke(GREY7, 1, kbtn)
 
-            -- toggle state indicator dot
-            local togdot = Instance.new("Frame")
-            togdot.Size = UDim2.new(0, 7, 0, 7)
-            togdot.Position = UDim2.new(0, -12, 0.5, -3)
-            togdot.BackgroundColor3 = GREY5
-            togdot.BorderSizePixel = 0; togdot.Parent = kbtn
-            makecorner(UDim.new(1,0), togdot)
+            -- context menu (right click on keybind button)
+            local ctxmenu = Instance.new("Frame")
+            ctxmenu.Size = UDim2.new(0, 130, 0, 0)
+            ctxmenu.BackgroundColor3 = DARK4
+            ctxmenu.BorderSizePixel = 0
+            ctxmenu.ZIndex = 50
+            ctxmenu.Visible = false
+            ctxmenu.ClipsDescendants = true
+            ctxmenu.Parent = screengui
+            makestroke(accentcolor, 1, ctxmenu)
+            regaccent(makestroke(accentcolor, 1, ctxmenu), "Color")
+            makecorner(UDim.new(0, 4), ctxmenu)
+            local ctxlayout = Instance.new("UIListLayout")
+            ctxlayout.SortOrder = Enum.SortOrder.LayoutOrder
+            ctxlayout.Parent = ctxmenu
+
+            local function closectx()
+                tweenservice:Create(ctxmenu, TweenInfo.new(0.1), {Size = UDim2.new(0,130,0,0)}):Play()
+                task.wait(0.1); ctxmenu.Visible = false
+            end
+
+            local function makectxitem(label, color, onclick)
+                local item = Instance.new("TextButton")
+                item.Size = UDim2.new(1, 0, 0, 26)
+                item.BackgroundColor3 = DARK4
+                item.Text = label
+                item.TextColor3 = color or GREY2
+                item.TextSize = 11
+                item.Font = Enum.Font.GothamSemibold
+                item.BorderSizePixel = 0
+                item.AutoButtonColor = false
+                item.ZIndex = 51
+                item.Parent = ctxmenu
+                item.MouseEnter:Connect(function() item.BackgroundColor3 = GREY6 end)
+                item.MouseLeave:Connect(function() item.BackgroundColor3 = DARK4 end)
+                item.MouseButton1Click:Connect(function() closectx(); onclick() end)
+            end
+
+            makectxitem("set keybind", GREY3, function()
+                listening = true
+                kbtn.Text = "[ ... ]"; kbtn.TextColor3 = accentcolor
+            end)
+            makectxitem("delete keybind", Color3.fromRGB(200, 50, 50), function()
+                currentkey = "none"
+                kbtn.Text = "[ -- ]"; kbtn.TextColor3 = GREY1
+            end)
+
+            -- right click opens context menu
+            kbtn.MouseButton2Click:Connect(function()
+                local ap = kbtn.AbsolutePosition
+                ctxmenu.Position = UDim2.new(0, ap.X, 0, ap.Y + 24)
+                ctxmenu.Visible = true
+                ctxmenu.Size = UDim2.new(0, 130, 0, 0)
+                tweenservice:Create(ctxmenu, TweenInfo.new(0.1), {Size = UDim2.new(0,130,0,52)}):Play()
+            end)
+
+            -- close ctx when clicking elsewhere
+            screengui.InputBegan:Connect(function(inp)
+                if ctxmenu.Visible and inp.UserInputType == Enum.UserInputType.MouseButton1 then
+                    task.wait(0.05); closectx()
+                end
+            end)
 
             local function settogtoggle(v)
                 togstate = v
-                tweenservice:Create(togdot, TweenInfo.new(0.12), {
+                tweenservice:Create(circle, TweenInfo.new(0.12), {
+                    Position = v and UDim2.new(1,-15,0.5,-6) or UDim2.new(0,3,0.5,-6)
+                }):Play()
+                tweenservice:Create(togbg, TweenInfo.new(0.12), {
                     BackgroundColor3 = v and accentcolor or GREY5
                 }):Play()
-                kbtn.BackgroundColor3 = v and Color3.fromRGB(28, 10, 10) or GREY6
+                tweenservice:Create(circle, TweenInfo.new(0.12), {
+                    BackgroundColor3 = v and WHITE or GREY1
+                }):Play()
                 if cb then cb(v) end
             end
 
-            kbtn.MouseButton1Click:Connect(function()
-                if not listening then
-                    listening = true; kbtn.Text = "[ ... ]"; kbtn.TextColor3 = accentcolor
-                end
+            -- left click on row = toggle on/off
+            local clickbtn = Instance.new("TextButton")
+            clickbtn.Size = UDim2.new(1, -130, 1, 0)
+            clickbtn.BackgroundTransparency = 1
+            clickbtn.Text = ""
+            clickbtn.Parent = row
+            clickbtn.MouseButton1Click:Connect(function()
+                settogtoggle(not togstate)
             end)
+
+            -- key press toggles state if keybind is set
             uis.InputBegan:Connect(function(inp, gpe)
                 if listening and inp.UserInputType == Enum.UserInputType.Keyboard then
                     listening = false
                     currentkey = inp.KeyCode.Name
                     kbtn.Text = "[" .. string.lower(currentkey) .. "]"
-                    kbtn.TextColor3 = GREY2
+                    kbtn.TextColor3 = GREY1
                 elseif not listening and inp.UserInputType == Enum.UserInputType.Keyboard
                     and currentkey ~= "none" and inp.KeyCode.Name == currentkey and not gpe then
                     settogtoggle(not togstate)
                 end
             end)
 
+            table.insert(keybindregistry, {
+                title    = txt,
+                getkey   = function() return currentkey end,
+                getstate = function() return togstate end,
+            })
+
             return settogtoggle
         end
 
         function tab:addthemepicker()
             self:addsection("theme color")
-
-            local coloropts = {
-                { Color3.fromRGB(210,25,25),   "red"    },
-                { Color3.fromRGB(25,120,210),  "blue"   },
-                { Color3.fromRGB(25,180,80),   "green"  },
-                { Color3.fromRGB(180,80,210),  "purple" },
-                { Color3.fromRGB(210,120,25),  "orange" },
-                { Color3.fromRGB(210,25,120),  "pink"   },
-                { Color3.fromRGB(25,200,200),  "cyan"   },
-                { Color3.fromRGB(160,160,160), "grey"   },
-            }
-
-            local row = Instance.new("Frame")
-            row.Size = UDim2.new(1, 0, 0, 44)
-            row.BackgroundColor3 = DARK3
-            row.BorderSizePixel = 0
-            row.Parent = page
-
-            local lbl = Instance.new("TextLabel")
-            lbl.Size = UDim2.new(1, -12, 0, 18)
-            lbl.Position = UDim2.new(0, 8, 0, 4)
-            lbl.BackgroundTransparency = 1
-            lbl.Text = "pick a color — changes the entire ui accent"
-            lbl.TextColor3 = GREY1
-            lbl.TextSize = 10
-            lbl.Font = Enum.Font.Gotham
-            lbl.TextXAlignment = Enum.TextXAlignment.Left
-            lbl.Parent = row
-
-            local crow = Instance.new("Frame")
-            crow.Size = UDim2.new(1, -16, 0, 22)
-            crow.Position = UDim2.new(0, 8, 0, 20)
-            crow.BackgroundTransparency = 1
-            crow.BorderSizePixel = 0
-            crow.Parent = row
-
-            local cl = Instance.new("UIListLayout")
-            cl.FillDirection = Enum.FillDirection.Horizontal
-            cl.Padding = UDim.new(0, 4)
-            cl.Parent = crow
-
-            for _, pair in ipairs(coloropts) do
-                local c, _ = pair[1], pair[2]
-                local sw = Instance.new("TextButton")
-                sw.Size = UDim2.new(0, 22, 0, 22)
-                sw.BackgroundColor3 = c
-                sw.Text = ""
-                sw.BorderSizePixel = 0
-                sw.Parent = crow
-                sw.MouseButton1Click:Connect(function()
-                    updatetheme(c)
-                    yesbtn.BackgroundColor3 = c
-                end)
-            end
+            -- reuse addcolorpicker but wire it to updatetheme
+            self:addcolorpicker({
+                title    = "accent color",
+                default  = accentcolor,
+                callback = function(col)
+                    updatetheme(col)
+                    yesbtn.BackgroundColor3 = col
+                end,
+            })
         end
 
         function tab:addkeybindlist()
             self:addsection("keybinds")
 
-            local filtermode = "all"
-
-            local filterrow = Instance.new("Frame")
-            filterrow.Size = UDim2.new(1, 0, 0, 30)
-            filterrow.BackgroundColor3 = DARK3
-            filterrow.BorderSizePixel = 0
-            filterrow.Parent = page
-
-            local filterlbl = Instance.new("TextLabel")
-            filterlbl.Size = UDim2.new(0.4, 0, 1, 0)
-            filterlbl.Position = UDim2.new(0, 10, 0, 0)
-            filterlbl.BackgroundTransparency = 1
-            filterlbl.Text = "show"
-            filterlbl.TextColor3 = GREY2
-            filterlbl.TextSize = 12
-            filterlbl.Font = Enum.Font.Gotham
-            filterlbl.TextXAlignment = Enum.TextXAlignment.Left
-            filterlbl.ZIndex = 2
-            filterlbl.Parent = filterrow
-
-            local filterbtn = Instance.new("TextButton")
-            filterbtn.Size = UDim2.new(0.5, -10, 0, 22)
-            filterbtn.Position = UDim2.new(0.5, 0, 0, 4)
-            filterbtn.BackgroundColor3 = GREY6
-            filterbtn.Text = "all"
-            filterbtn.TextColor3 = GREY2
-            filterbtn.TextSize = 11
-            filterbtn.Font = Enum.Font.Gotham
-            filterbtn.BorderSizePixel = 0
-            filterbtn.ZIndex = 3
-            filterbtn.Parent = filterrow
-            makestroke(GREY7, 1, filterbtn)
-
-            local ddframe2 = Instance.new("Frame")
-            ddframe2.Size = UDim2.new(0.5, -10, 0, 0)
-            ddframe2.Position = UDim2.new(0.5, 0, 1, 2)
-            ddframe2.BackgroundColor3 = DARK3
-            ddframe2.BorderSizePixel = 0
-            ddframe2.ZIndex = 20
-            ddframe2.Visible = false
-            ddframe2.ClipsDescendants = true
-            ddframe2.Parent = filterrow
-            Instance.new("UIListLayout", ddframe2).SortOrder = Enum.SortOrder.LayoutOrder
-            local dds2 = makestroke(accentcolor, 1, ddframe2)
-            regaccent(dds2, "Color")
-
             local listcontainer = Instance.new("Frame")
-            listcontainer.Size = UDim2.new(1, 0, 0, 0)
+            listcontainer.Size = UDim2.new(1, 0, 0, 28)
             listcontainer.BackgroundColor3 = DARK3
             listcontainer.BorderSizePixel = 0
             listcontainer.ClipsDescendants = true
@@ -1675,36 +1669,45 @@ function multihubx:createwindow(config)
 
                 local shown = 0
                 for _, entry in ipairs(keybindregistry) do
-                    local isactive = entry.getstate()
-                    if filtermode == "active" and not isactive then continue end
-
                     shown += 1
+                    local isactive = entry.getstate()
+
                     local row2 = Instance.new("Frame")
-                    row2.Size = UDim2.new(1, 0, 0, 22)
+                    row2.Size = UDim2.new(1, 0, 0, 24)
                     row2.BackgroundTransparency = 1
                     row2.BorderSizePixel = 0
                     row2.Parent = listcontainer
 
+                    -- active dot
+                    local dot = Instance.new("Frame")
+                    dot.Size = UDim2.new(0, 6, 0, 6)
+                    dot.Position = UDim2.new(0, 0, 0.5, -3)
+                    dot.BackgroundColor3 = isactive and accentcolor or GREY5
+                    dot.BorderSizePixel = 0
+                    dot.Parent = row2
+                    makecorner(UDim.new(1,0), dot)
+
                     local keylbl = Instance.new("TextLabel")
-                    keylbl.Size = UDim2.new(0, 80, 1, 0)
-                    keylbl.BackgroundColor3 = GREY6
+                    keylbl.Size = UDim2.new(0, 72, 1, 0)
+                    keylbl.Position = UDim2.new(0, 12, 0, 0)
+                    keylbl.BackgroundTransparency = 1
                     keylbl.Text = "[" .. string.lower(entry.getkey()) .. "]"
                     keylbl.TextColor3 = isactive and accentcolor or GREY2
-                    keylbl.TextSize = 11
+                    keylbl.TextSize = 10
                     keylbl.Font = Enum.Font.GothamSemibold
                     keylbl.BorderSizePixel = 0
                     keylbl.Parent = row2
-                    if isactive then regaccent(keylbl, "TextColor3") end
 
                     local titlelbl2 = Instance.new("TextLabel")
                     titlelbl2.Size = UDim2.new(1, -88, 1, 0)
-                    titlelbl2.Position = UDim2.new(0, 84, 0, 0)
+                    titlelbl2.Position = UDim2.new(0, 88, 0, 0)
                     titlelbl2.BackgroundTransparency = 1
                     titlelbl2.Text = entry.title
                     titlelbl2.TextColor3 = isactive and GREY3 or GREY1
-                    titlelbl2.TextSize = 11
+                    titlelbl2.TextSize = 10
                     titlelbl2.Font = Enum.Font.Gotham
                     titlelbl2.TextXAlignment = Enum.TextXAlignment.Left
+                    titlelbl2.TextTruncate = Enum.TextTruncate.AtEnd
                     titlelbl2.Parent = row2
                 end
 
@@ -1718,70 +1721,23 @@ function multihubx:createwindow(config)
                     nonelbl.Size = UDim2.new(1, -16, 1, 0)
                     nonelbl.Position = UDim2.new(0, 8, 0, 0)
                     nonelbl.BackgroundTransparency = 1
-                    nonelbl.Text = "no active keybinds"
+                    nonelbl.Text = "no keybinds registered"
                     nonelbl.TextColor3 = GREY7
-                    nonelbl.TextSize = 11
+                    nonelbl.TextSize = 10
                     nonelbl.Font = Enum.Font.Gotham
                     nonelbl.TextXAlignment = Enum.TextXAlignment.Left
                     nonelbl.Parent = listcontainer
                 else
-                    listcontainer.Size = UDim2.new(1, 0, 0, shown * 24 + 8)
+                    listcontainer.Size = UDim2.new(1, 0, 0, shown * 26 + 8)
                 end
             end
 
             rebuildlist()
 
-            local dfoptions = {"all", "active"}
-            local ddisopen = false
-
-            for _, v in ipairs(dfoptions) do
-                local opt = Instance.new("TextButton")
-                opt.Size = UDim2.new(1, 0, 0, 22)
-                opt.BackgroundColor3 = GREY6
-                opt.Text = v
-                opt.TextColor3 = GREY2
-                opt.TextSize = 11
-                opt.Font = Enum.Font.Gotham
-                opt.BorderSizePixel = 0
-                opt.ZIndex = 21
-                opt.Parent = ddframe2
-                opt.MouseButton1Click:Connect(function()
-                    filterbtn.Text = v
-                    filtermode = v
-                    ddisopen = false
-                    tweenservice:Create(ddframe2, TweenInfo.new(0.15), { Size = UDim2.new(0.5,-10,0,0) }):Play()
-                    task.wait(0.15); ddframe2.Visible = false
-                    filterrow.Size = UDim2.new(1, 0, 0, 30)
-                    rebuildlist()
-                end)
-            end
-
-            filterbtn.MouseButton1Click:Connect(function()
-                ddisopen = not ddisopen
-                if ddisopen then
-                    ddframe2.Visible = true
-                    ddframe2.Size = UDim2.new(0.5,-10,0,0)
-                    tweenservice:Create(ddframe2, TweenInfo.new(0.15), { Size = UDim2.new(0.5,-10,0,44) }):Play()
-                    filterrow.Size = UDim2.new(1, 0, 0, 76)
-                else
-                    tweenservice:Create(ddframe2, TweenInfo.new(0.15), { Size = UDim2.new(0.5,-10,0,0) }):Play()
-                    task.wait(0.15); ddframe2.Visible = false
-                    filterrow.Size = UDim2.new(1, 0, 0, 30)
-                end
+            -- auto refresh every 0.5s so active states stay current
+            task.spawn(function()
+                while screengui.Parent do task.wait(0.5); rebuildlist() end
             end)
-
-            local refreshbtn = Instance.new("TextButton")
-            refreshbtn.Size = UDim2.new(1, 0, 0, 24)
-            refreshbtn.BackgroundColor3 = DARK4
-            refreshbtn.Text = "refresh list"
-            refreshbtn.TextColor3 = GREY2
-            refreshbtn.TextSize = 11
-            refreshbtn.Font = Enum.Font.Gotham
-            refreshbtn.BorderSizePixel = 0
-            refreshbtn.Parent = page
-            local rbs = makestroke(accentcolor, 1, refreshbtn)
-            regaccent(rbs, "Color")
-            refreshbtn.MouseButton1Click:Connect(rebuildlist)
         end
 
         function tab:addblurslider()
