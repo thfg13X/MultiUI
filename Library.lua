@@ -1450,6 +1450,7 @@ function multihubx:createwindow(config)
             local currentkey = defaultkey
             local togstate   = false
             local listening  = false
+            local togbg, circle
 
             local function settogtoggle(v)
                 togstate = v
@@ -1482,7 +1483,7 @@ function multihubx:createwindow(config)
             lbl.TextXAlignment = Enum.TextXAlignment.Left
             lbl.Parent = row
 
-            local togbg = Instance.new("Frame")
+            togbg = Instance.new("Frame")
             togbg.Size = UDim2.new(0, 36, 0, 18)
             togbg.Position = UDim2.new(1, -108, 0.5, -9)
             togbg.BackgroundColor3 = GREY5
@@ -1490,7 +1491,7 @@ function multihubx:createwindow(config)
             togbg.Parent = row
             makecorner(UDim.new(1,0), togbg)
 
-            local circle = Instance.new("Frame")
+            circle = Instance.new("Frame")
             circle.Size = UDim2.new(0, 12, 0, 12)
             circle.Position = UDim2.new(0, 3, 0.5, -6)
             circle.BackgroundColor3 = GREY1
