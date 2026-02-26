@@ -64,6 +64,117 @@ function multihubx:createwindow(config)
     local keybindregistry = {}
     local notifstack     = {}
 
+    -- ── floating keybind panel (right side, draggable) ──────────────────────
+    local kbfloat = Instance.new("Frame")
+    kbfloat.Name = "keybindpanel"
+    kbfloat.Size = UDim2.new(0, 200, 0, 28)
+    kbfloat.Position = UDim2.new(1, -210, 0.5, -80)
+    kbfloat.BackgroundColor3 = DARK
+    kbfloat.BorderSizePixel = 0
+    kbfloat.ZIndex = 30
+    kbfloat.Parent = screengui
+
+    local kbfloatstroke = Instance.new("UIStroke")
+    kbfloatstroke.Color = accentcolor; kbfloatstroke.Thickness = 1; kbfloatstroke.Parent = kbfloat
+
+    local kbfloatherbar = Instance.new("Frame")
+    kbfloatherbar.Size = UDim2.new(1, 0, 0, 22)
+    kbfloatherbar.BackgroundColor3 = DARK5
+    kbfloatherbar.BorderSizePixel = 0; kbfloatherbar.ZIndex = 31; kbfloatherbar.Parent = kbfloat
+
+    local kbfloatherlbl = Instance.new("TextLabel")
+    kbfloatherlbl.Size = UDim2.new(1, -8, 1, 0)
+    kbfloatherlbl.Position = UDim2.new(0, 6, 0, 0)
+    kbfloatherlbl.BackgroundTransparency = 1; kbfloatherlbl.Text = "keybinds"
+    kbfloatherlbl.TextColor3 = accentcolor
+    kbfloatherlbl.TextSize = 11; kbfloatherlbl.Font = Enum.Font.GothamBold
+    kbfloatherlbl.TextXAlignment = Enum.TextXAlignment.Left
+    kbfloatherlbl.ZIndex = 32; kbfloatherlbl.Parent = kbfloatherbar
+
+    local kbfloatlist = Instance.new("Frame")
+    kbfloatlist.Size = UDim2.new(1, 0, 1, -22)
+    kbfloatlist.Position = UDim2.new(0, 0, 0, 22)
+    kbfloatlist.BackgroundTransparency = 1; kbfloatlist.BorderSizePixel = 0
+    kbfloatlist.ZIndex = 31; kbfloatlist.Parent = kbfloat
+
+    local kbfloatlayout = Instance.new("UIListLayout")
+    kbfloatlayout.SortOrder = Enum.SortOrder.LayoutOrder
+    kbfloatlayout.Padding = UDim.new(0, 1); kbfloatlayout.Parent = kbfloatlist
+
+    local kbfloatpad = Instance.new("UIPadding")
+    kbfloatpad.PaddingTop = UDim.new(0, 3); kbfloatpad.PaddingBottom = UDim.new(0, 3)
+    kbfloatpad.PaddingLeft = UDim.new(0, 4); kbfloatpad.PaddingRight = UDim.new(0, 4)
+    kbfloatpad.Parent = kbfloatlist
+
+    -- header dragging
+    local kbfdrag, kbfdragstart, kbfstartpos = false, nil, nil
+    kbfloatherbar.InputBegan:Connect(function(inp)
+        if inp.UserInputType == Enum.UserInputType.MouseButton1 then
+            kbfdrag = true; kbfdragstart = inp.Position; kbfstartpos = kbfloat.Position
+        end
+    end)
+    kbfloatherbar.InputEnded:Connect(function(inp)
+        if inp.UserInputType == Enum.UserInputType.MouseButton1 then kbfdrag = false end
+    end)
+    uis.InputChanged:Connect(function(inp)
+        if kbfdrag and inp.UserInputType == Enum.UserInputType.MouseMovement then
+            local d = inp.Position - kbfdragstart
+            kbfloat.Position = UDim2.new(kbfstartpos.X.Scale, kbfstartpos.X.Offset + d.X,
+                kbfstartpos.Y.Scale, kbfstartpos.Y.Offset + d.Y)
+        end
+    end)
+    uis.InputEnded:Connect(function(inp)
+        if inp.UserInputType == Enum.UserInputType.MouseButton1 then kbfdrag = false end
+    end)
+
+    local kbfrows = {}
+    local function refreshkbfloat()
+        for _, r in ipairs(kbfrows) do r:Destroy() end
+        kbfrows = {}
+        for _, entry in ipairs(keybindregistry) do
+            local r = Instance.new("Frame")
+            r.Size = UDim2.new(1, 0, 0, 20)
+            r.BackgroundTransparency = 1; r.BorderSizePixel = 0
+            r.ZIndex = 32; r.Parent = kbfloatlist
+            table.insert(kbfrows, r)
+
+            local isactive = entry.getstate()
+            local dot = Instance.new("Frame")
+            dot.Size = UDim2.new(0, 7, 0, 7)
+            dot.Position = UDim2.new(0, 0, 0.5, -3)
+            dot.BackgroundColor3 = isactive and accentcolor or GREY5
+            dot.BorderSizePixel = 0; dot.ZIndex = 33; dot.Parent = r
+            Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
+
+            local keylbl = Instance.new("TextLabel")
+            keylbl.Size = UDim2.new(0, 55, 1, 0)
+            keylbl.Position = UDim2.new(0, 12, 0, 0)
+            keylbl.BackgroundTransparency = 1
+            keylbl.Text = "[" .. string.lower(entry.getkey()) .. "]"
+            keylbl.TextColor3 = isactive and accentcolor or GREY1
+            keylbl.TextSize = 10; keylbl.Font = Enum.Font.GothamSemibold
+            keylbl.TextXAlignment = Enum.TextXAlignment.Left
+            keylbl.ZIndex = 33; keylbl.Parent = r
+
+            local namelbl = Instance.new("TextLabel")
+            namelbl.Size = UDim2.new(1, -70, 1, 0)
+            namelbl.Position = UDim2.new(0, 70, 0, 0)
+            namelbl.BackgroundTransparency = 1
+            namelbl.Text = entry.title
+            namelbl.TextColor3 = isactive and GREY3 or GREY1
+            namelbl.TextSize = 10; namelbl.Font = Enum.Font.Gotham
+            namelbl.TextXAlignment = Enum.TextXAlignment.Left
+            namelbl.TextTruncate = Enum.TextTruncate.AtEnd
+            namelbl.ZIndex = 33; namelbl.Parent = r
+        end
+        local cnt = #keybindregistry
+        kbfloat.Size = UDim2.new(0, 200, 0, 22 + math.max(1, cnt) * 21 + 6)
+    end
+
+    task.spawn(function()
+        while screengui.Parent do task.wait(0.25); refreshkbfloat() end
+    end)
+
     local function regaccent(obj, prop)
         table.insert(accentobjs, { obj = obj, prop = prop })
     end
@@ -78,6 +189,8 @@ function multihubx:createwindow(config)
 
     local function updatetheme(color)
         accentcolor = color
+        kbfloatstroke.Color = color
+        kbfloatherlbl.TextColor3 = color
         for _, item in ipairs(accentobjs) do
             tweenservice:Create(item.obj, TweenInfo.new(0.25), { [item.prop] = color }):Play()
         end
@@ -233,19 +346,20 @@ function multihubx:createwindow(config)
     local mainstroke = makestroke(accentcolor, 2, mainframe)
     regaccent(mainstroke, "Color")
 
+    local titlebarH = subtitle ~= "" and 46 or 34
+
     local titlebar = Instance.new("Frame")
-    titlebar.Size = UDim2.new(1, 0, 0, 34)
+    titlebar.Size = UDim2.new(1, 0, 0, titlebarH)
     titlebar.BackgroundColor3 = DARK5
     titlebar.BorderSizePixel = 0
     titlebar.ZIndex = 2
     titlebar.Parent = mainframe
 
-    local fulltitle = subtitle ~= "" and (title .. "  |  " .. subtitle) or title
     local titlelbl = Instance.new("TextLabel")
-    titlelbl.Size = UDim2.new(1, -70, 1, 0)
-    titlelbl.Position = UDim2.new(0, 10, 0, 0)
+    titlelbl.Size = UDim2.new(1, -70, 0, subtitle ~= "" and 22 or 34)
+    titlelbl.Position = UDim2.new(0, 10, 0, subtitle ~= "" and 4 or 0)
     titlelbl.BackgroundTransparency = 1
-    titlelbl.Text = fulltitle
+    titlelbl.Text = title
     titlelbl.TextColor3 = accentcolor
     titlelbl.TextSize = 14
     titlelbl.Font = Enum.Font.GothamBold
@@ -254,10 +368,24 @@ function multihubx:createwindow(config)
     titlelbl.Parent = titlebar
     regaccent(titlelbl, "TextColor3")
 
+    if subtitle ~= "" then
+        local sublbl = Instance.new("TextLabel")
+        sublbl.Size = UDim2.new(1, -70, 0, 16)
+        sublbl.Position = UDim2.new(0, 10, 0, 27)
+        sublbl.BackgroundTransparency = 1
+        sublbl.Text = subtitle
+        sublbl.TextColor3 = Color3.fromRGB(110, 110, 110)
+        sublbl.TextSize = 11
+        sublbl.Font = Enum.Font.Gotham
+        sublbl.TextXAlignment = Enum.TextXAlignment.Left
+        sublbl.ZIndex = 2
+        sublbl.Parent = titlebar
+    end
+
     local function maketitlebtn(txt, xoff, bg)
         local b = Instance.new("TextButton")
         b.Size = UDim2.new(0, 28, 0, 24)
-        b.Position = UDim2.new(1, xoff, 0, 5)
+        b.Position = UDim2.new(1, xoff, 0, (titlebarH - 24) / 2)
         b.BackgroundColor3 = bg
         b.Text = txt
         b.TextColor3 = WHITE
@@ -274,7 +402,7 @@ function multihubx:createwindow(config)
 
     local sep = Instance.new("Frame")
     sep.Size = UDim2.new(1, 0, 0, 1)
-    sep.Position = UDim2.new(0, 0, 0, 34)
+    sep.Position = UDim2.new(0, 0, 0, titlebarH)
     sep.BackgroundColor3 = accentcolor
     sep.BorderSizePixel = 0
     sep.ZIndex = 2
@@ -282,16 +410,16 @@ function multihubx:createwindow(config)
     regaccent(sep, "BackgroundColor3")
 
     local tabpanel = Instance.new("Frame")
-    tabpanel.Size = UDim2.new(0, 120, 1, -35)
-    tabpanel.Position = UDim2.new(0, 0, 0, 35)
+    tabpanel.Size = UDim2.new(0, 120, 1, -(titlebarH+1))
+    tabpanel.Position = UDim2.new(0, 0, 0, titlebarH+1)
     tabpanel.BackgroundColor3 = DARK2
     tabpanel.BorderSizePixel = 0
     tabpanel.ClipsDescendants = true
     tabpanel.Parent = mainframe
 
     local tabdiv = Instance.new("Frame")
-    tabdiv.Size = UDim2.new(0, 1, 1, -35)
-    tabdiv.Position = UDim2.new(0, 120, 0, 35)
+    tabdiv.Size = UDim2.new(0, 1, 1, -(titlebarH+1))
+    tabdiv.Position = UDim2.new(0, 120, 0, titlebarH+1)
     tabdiv.BackgroundColor3 = accentcolor
     tabdiv.BorderSizePixel = 0
     tabdiv.Parent = mainframe
@@ -303,8 +431,8 @@ function multihubx:createwindow(config)
     tablayout.Parent = tabpanel
 
     local contentarea = Instance.new("Frame")
-    contentarea.Size = UDim2.new(1, -121, 1, -35)
-    contentarea.Position = UDim2.new(0, 121, 0, 35)
+    contentarea.Size = UDim2.new(1, -121, 1, -(titlebarH+1))
+    contentarea.Position = UDim2.new(0, 121, 0, titlebarH+1)
     contentarea.BackgroundTransparency = 1
     contentarea.BorderSizePixel = 0
     contentarea.ClipsDescendants = true
@@ -357,6 +485,18 @@ function multihubx:createwindow(config)
     restorebtn.Parent = restorestrip
     regaccent(restorebtn, "TextColor3")
 
+    -- restore strip dragging
+    local rsdragging, rsdragstart, rsstartpos, rshasmoved = false, nil, nil, false
+    restorestrip.InputBegan:Connect(function(inp)
+        if inp.UserInputType == Enum.UserInputType.MouseButton1 then
+            rsdragging = true; rshasmoved = false
+            rsdragstart = inp.Position; rsstartpos = restorestrip.Position
+        end
+    end)
+    restorestrip.InputEnded:Connect(function(inp)
+        if inp.UserInputType == Enum.UserInputType.MouseButton1 then rsdragging = false end
+    end)
+
     local minihitbox = Instance.new("TextButton")
     minihitbox.Size = UDim2.new(1, 0, 1, 0)
     minihitbox.BackgroundTransparency = 1
@@ -383,9 +523,11 @@ function multihubx:createwindow(config)
         end
     end)
     restorebtn.MouseButton1Click:Connect(function()
-        miniwidget.Visible = false
-        restorestrip.Visible = false
-        mainframe.Visible = true
+        if not rshasmoved then
+            miniwidget.Visible = false
+            restorestrip.Visible = false
+            mainframe.Visible = true
+        end
     end)
 
     local function collapse()
@@ -425,11 +567,18 @@ function multihubx:createwindow(config)
                 ministartpos.X.Scale, ministartpos.X.Offset + d.X,
                 ministartpos.Y.Scale, ministartpos.Y.Offset + d.Y)
         end
+        if rsdragging and rsdragstart then
+            local d = inp.Position - rsdragstart
+            if math.abs(d.X) > 3 or math.abs(d.Y) > 3 then rshasmoved = true end
+            restorestrip.Position = UDim2.new(
+                rsstartpos.X.Scale, rsstartpos.X.Offset + d.X,
+                rsstartpos.Y.Scale, rsstartpos.Y.Offset + d.Y)
+        end
     end)
 
     uis.InputEnded:Connect(function(inp)
         if inp.UserInputType == Enum.UserInputType.MouseButton1 then
-            maindragging = false; minidragging = false
+            maindragging = false; minidragging = false; rsdragging = false
         end
     end)
 
@@ -462,6 +611,7 @@ function multihubx:createwindow(config)
             info.btn.TextColor3 = active and WHITE or GREY1
             info.btn.BackgroundColor3 = DARK2
             info.indicator.Visible = active
+            if active then info.indicator.BackgroundColor3 = accentcolor end
         end
         for pname, page in pairs(pagelist) do
             page.Visible = pname == name
@@ -944,9 +1094,16 @@ function multihubx:createwindow(config)
             row.BorderSizePixel = 0
             row.Parent = page
 
+            local preview = Instance.new("Frame")
+            preview.Size = UDim2.new(0, 16, 0, 16)
+            preview.Position = UDim2.new(0, 10, 0.5, -8)
+            preview.BackgroundColor3 = default
+            preview.BorderSizePixel = 0; preview.Parent = row
+            makecorner(UDim.new(0, 3), preview)
+
             local lbl = Instance.new("TextLabel")
-            lbl.Size = UDim2.new(0.38, 0, 1, 0)
-            lbl.Position = UDim2.new(0, 10, 0, 0)
+            lbl.Size = UDim2.new(0.28, 0, 1, 0)
+            lbl.Position = UDim2.new(0, 32, 0, 0)
             lbl.BackgroundTransparency = 1
             lbl.Text = txt
             lbl.TextColor3 = GREY2
@@ -956,8 +1113,8 @@ function multihubx:createwindow(config)
             lbl.Parent = row
 
             local crow = Instance.new("Frame")
-            crow.Size = UDim2.new(0.58, 0, 0, 22)
-            crow.Position = UDim2.new(0.4, 0, 0.5, -11)
+            crow.Size = UDim2.new(0.56, 0, 0, 22)
+            crow.Position = UDim2.new(0.42, 0, 0.5, -11)
             crow.BackgroundTransparency = 1
             crow.BorderSizePixel = 0
             crow.Parent = row
@@ -976,7 +1133,10 @@ function multihubx:createwindow(config)
                 sw.Text = ""
                 sw.BorderSizePixel = 0
                 sw.Parent = crow
-                sw.MouseButton1Click:Connect(function() if cb then cb(c) end end)
+                sw.MouseButton1Click:Connect(function()
+                    preview.BackgroundColor3 = c
+                    if cb then cb(c) end
+                end)
             end
         end
 
@@ -1017,7 +1177,7 @@ function multihubx:createwindow(config)
             kbtn.Size = UDim2.new(0, 88, 0, 22)
             kbtn.Position = UDim2.new(1, -94, 0.5, -11)
             kbtn.BackgroundColor3 = GREY6
-            kbtn.Text = "[" .. string.lower(defaultkey) .. "]"
+            kbtn.Text = "[" .. string.lower(currentkey) .. "]"
             kbtn.TextColor3 = GREY2
             kbtn.TextSize = 11
             kbtn.Font = Enum.Font.GothamSemibold
@@ -1025,8 +1185,27 @@ function multihubx:createwindow(config)
             kbtn.Parent = row
             makestroke(GREY7, 1, kbtn)
 
+            -- toggle state indicator dot
+            local togdot = Instance.new("Frame")
+            togdot.Size = UDim2.new(0, 7, 0, 7)
+            togdot.Position = UDim2.new(0, -12, 0.5, -3)
+            togdot.BackgroundColor3 = GREY5
+            togdot.BorderSizePixel = 0; togdot.Parent = kbtn
+            makecorner(UDim.new(1,0), togdot)
+
+            local function settogtoggle(v)
+                togstate = v
+                tweenservice:Create(togdot, TweenInfo.new(0.12), {
+                    BackgroundColor3 = v and accentcolor or GREY5
+                }):Play()
+                kbtn.BackgroundColor3 = v and Color3.fromRGB(28, 10, 10) or GREY6
+                if cb then cb(v) end
+            end
+
             kbtn.MouseButton1Click:Connect(function()
-                listening = true; kbtn.Text = "..."; kbtn.TextColor3 = accentcolor
+                if not listening then
+                    listening = true; kbtn.Text = "[ ... ]"; kbtn.TextColor3 = accentcolor
+                end
             end)
             uis.InputBegan:Connect(function(inp, gpe)
                 if listening and inp.UserInputType == Enum.UserInputType.Keyboard then
@@ -1035,12 +1214,12 @@ function multihubx:createwindow(config)
                     kbtn.Text = "[" .. string.lower(currentkey) .. "]"
                     kbtn.TextColor3 = GREY2
                 elseif not listening and inp.UserInputType == Enum.UserInputType.Keyboard
-                    and inp.KeyCode.Name == currentkey and not gpe then
-                    togstate = not togstate
-                    kbtn.BackgroundColor3 = togstate and Color3.fromRGB(40,10,10) or GREY6
-                    if cb then cb(togstate) end
+                    and currentkey ~= "none" and inp.KeyCode.Name == currentkey and not gpe then
+                    settogtoggle(not togstate)
                 end
             end)
+
+            return settogtoggle
         end
 
         function tab:addthemepicker()
