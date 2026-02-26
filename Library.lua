@@ -59,6 +59,15 @@ function multihubx:createwindow(config)
     screengui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     screengui.Parent         = playergui
 
+    -- blur effect (behind game world, toggled with GUI visibility)
+    local lighting = game:GetService("Lighting")
+    local blureffect = Instance.new("BlurEffect")
+    blureffect.Size    = 0
+    blureffect.Enabled = false
+    blureffect.Parent  = lighting
+    local blurenabled  = false
+    local blurintensity = 20  -- default blur size when enabled
+
     local accentcolor    = Color3.fromRGB(210, 25, 25)
     local accentobjs     = {}
     local keybindregistry = {}
@@ -204,51 +213,107 @@ function multihubx:createwindow(config)
     notifstackframe.ZIndex = 50
     notifstackframe.Parent = screengui
 
-    local function sendnotif(msg)
+    -- sendnotif accepts either a string OR {title=..., text=...}
+    local function sendnotif(data)
+        local ntitle, ntext
+        if type(data) == "table" then
+            ntitle = data.title or "notice"
+            ntext  = data.text  or ""
+        else
+            ntitle = nil
+            ntext  = tostring(data)
+        end
+
+        local nfH = ntitle and 54 or 40
         local nf = Instance.new("Frame")
-        nf.Size = UDim2.new(1, 0, 0, 40)
-        nf.Position = UDim2.new(0, 0, 1, -(44 * (#notifstack + 1) + 10))
+        nf.Size = UDim2.new(1, 0, 0, nfH)
+        nf.Position = UDim2.new(0, 0, 1, -((nfH + 4) * (#notifstack + 1) + 10))
         nf.BackgroundColor3 = DARK2
         nf.BackgroundTransparency = 1
         nf.BorderSizePixel = 0
         nf.ZIndex = 51
         nf.Parent = notifstackframe
-
         local ns = makestroke(accentcolor, 1, nf)
 
-        local nfl = Instance.new("TextLabel")
-        nfl.Size = UDim2.new(1, -12, 1, -6)
-        nfl.Position = UDim2.new(0, 8, 0, 2)
-        nfl.BackgroundTransparency = 1
-        nfl.Text = msg
-        nfl.TextColor3 = GREY3
-        nfl.TextSize = 11
-        nfl.Font = Enum.Font.Gotham
-        nfl.TextXAlignment = Enum.TextXAlignment.Left
-        nfl.TextWrapped = true
-        nfl.ZIndex = 52
-        nfl.Parent = nf
+        -- left accent bar
+        local accentbar = Instance.new("Frame")
+        accentbar.Size = UDim2.new(0, 3, 1, -4)
+        accentbar.Position = UDim2.new(0, 0, 0, 2)
+        accentbar.BackgroundColor3 = accentcolor
+        accentbar.BorderSizePixel = 0
+        accentbar.ZIndex = 52
+        accentbar.Parent = nf
+        regaccent(accentbar, "BackgroundColor3")
 
-        local bar = Instance.new("Frame")
-        bar.Size = UDim2.new(1, 0, 0, 2)
-        bar.Position = UDim2.new(0, 0, 1, -2)
-        bar.BackgroundColor3 = accentcolor
-        bar.BorderSizePixel = 0
-        bar.ZIndex = 52
-        bar.Parent = nf
+        if ntitle then
+            local ntlbl = Instance.new("TextLabel")
+            ntlbl.Size = UDim2.new(1, -16, 0, 18)
+            ntlbl.Position = UDim2.new(0, 10, 0, 5)
+            ntlbl.BackgroundTransparency = 1
+            ntlbl.Text = ntitle
+            ntlbl.TextColor3 = accentcolor
+            ntlbl.TextSize = 12
+            ntlbl.Font = Enum.Font.GothamBold
+            ntlbl.TextXAlignment = Enum.TextXAlignment.Left
+            ntlbl.ZIndex = 52
+            ntlbl.Parent = nf
+            regaccent(ntlbl, "TextColor3")
 
-        table.insert(notifstack, nf)
-        tweenservice:Create(nf, TweenInfo.new(0.2), { BackgroundTransparency = 0 }):Play()
-        tweenservice:Create(bar, TweenInfo.new(3.5, Enum.EasingStyle.Linear), { Size = UDim2.new(0, 0, 0, 2) }):Play()
-        task.delay(3.5, function()
-            tweenservice:Create(nf,  TweenInfo.new(0.3), { BackgroundTransparency = 1 }):Play()
-            tweenservice:Create(nfl, TweenInfo.new(0.3), { TextTransparency = 1 }):Play()
-            task.wait(0.3)
-            for i, v in ipairs(notifstack) do
-                if v == nf then table.remove(notifstack, i); break end
-            end
-            nf:Destroy()
-        end)
+            local nfl = Instance.new("TextLabel")
+            nfl.Size = UDim2.new(1, -16, 0, 22)
+            nfl.Position = UDim2.new(0, 10, 0, 24)
+            nfl.BackgroundTransparency = 1
+            nfl.Text = ntext
+            nfl.TextColor3 = GREY2
+            nfl.TextSize = 11
+            nfl.Font = Enum.Font.Gotham
+            nfl.TextXAlignment = Enum.TextXAlignment.Left
+            nfl.TextWrapped = true
+            nfl.ZIndex = 52
+            nfl.Parent = nf
+
+            table.insert(notifstack, nf)
+            tweenservice:Create(nf, TweenInfo.new(0.2), { BackgroundTransparency = 0 }):Play()
+            local bar = Instance.new("Frame")
+            bar.Size = UDim2.new(1, 0, 0, 2); bar.Position = UDim2.new(0, 0, 1, -2)
+            bar.BackgroundColor3 = accentcolor; bar.BorderSizePixel = 0; bar.ZIndex = 52; bar.Parent = nf
+            tweenservice:Create(bar, TweenInfo.new(3.5, Enum.EasingStyle.Linear), { Size = UDim2.new(0,0,0,2) }):Play()
+            task.delay(3.5, function()
+                tweenservice:Create(nf,   TweenInfo.new(0.3), { BackgroundTransparency = 1 }):Play()
+                tweenservice:Create(nfl,  TweenInfo.new(0.3), { TextTransparency = 1 }):Play()
+                tweenservice:Create(ntlbl,TweenInfo.new(0.3), { TextTransparency = 1 }):Play()
+                task.wait(0.3)
+                for i, v in ipairs(notifstack) do if v == nf then table.remove(notifstack, i); break end end
+                nf:Destroy()
+            end)
+        else
+            local nfl = Instance.new("TextLabel")
+            nfl.Size = UDim2.new(1, -16, 1, -6)
+            nfl.Position = UDim2.new(0, 10, 0, 2)
+            nfl.BackgroundTransparency = 1
+            nfl.Text = ntext
+            nfl.TextColor3 = GREY3
+            nfl.TextSize = 11
+            nfl.Font = Enum.Font.Gotham
+            nfl.TextXAlignment = Enum.TextXAlignment.Left
+            nfl.TextWrapped = true
+            nfl.ZIndex = 52
+            nfl.Parent = nf
+
+            table.insert(notifstack, nf)
+            tweenservice:Create(nf, TweenInfo.new(0.2), { BackgroundTransparency = 0 }):Play()
+            local bar = Instance.new("Frame")
+            bar.Size = UDim2.new(1, 0, 0, 2); bar.Position = UDim2.new(0, 0, 1, -2)
+            bar.BackgroundColor3 = accentcolor; bar.BorderSizePixel = 0; bar.ZIndex = 52; bar.Parent = nf
+            tweenservice:Create(bar, TweenInfo.new(3.5, Enum.EasingStyle.Linear), { Size = UDim2.new(0,0,0,2) }):Play()
+            task.delay(3.5, function()
+                tweenservice:Create(nf,  TweenInfo.new(0.3), { BackgroundTransparency = 1 }):Play()
+                tweenservice:Create(nfl, TweenInfo.new(0.3), { TextTransparency = 1 }):Play()
+                task.wait(0.3)
+                for i, v in ipairs(notifstack) do if v == nf then table.remove(notifstack, i); break end end
+                nf:Destroy()
+            end)
+        end
     end
 
     local confirmpopup = Instance.new("Frame")
@@ -516,24 +581,33 @@ function multihubx:createwindow(config)
         if inp.UserInputType == Enum.UserInputType.MouseButton1 then minidragging = false end
     end)
     minihitbox.MouseButton1Click:Connect(function()
-        if not minihasmoved then
-            miniwidget.Visible = false
-            restorestrip.Visible = false
-            mainframe.Visible = true
-        end
+        if not minihasmoved then showgui() end
     end)
     restorebtn.MouseButton1Click:Connect(function()
-        if not rshasmoved then
-            miniwidget.Visible = false
-            restorestrip.Visible = false
-            mainframe.Visible = true
-        end
+        if not rshasmoved then showgui() end
     end)
 
     local function collapse()
         mainframe.Visible = false
         miniwidget.Visible = true
         restorestrip.Visible = true
+        -- hide blur when GUI is hidden
+        if blurenabled then
+            tweenservice:Create(blureffect, TweenInfo.new(0.25), { Size = 0 }):Play()
+            task.delay(0.25, function() blureffect.Enabled = false end)
+        end
+    end
+
+    local function showgui()
+        miniwidget.Visible = false
+        restorestrip.Visible = false
+        mainframe.Visible = true
+        -- show blur when GUI opens
+        if blurenabled then
+            blureffect.Size = 0
+            blureffect.Enabled = true
+            tweenservice:Create(blureffect, TweenInfo.new(0.25), { Size = blurintensity }):Play()
+        end
     end
 
     closebtn.MouseButton1Click:Connect(collapse)
@@ -590,10 +664,7 @@ function multihubx:createwindow(config)
         end
         if not listeningforkey and inp.KeyCode == currenttogglekey and not gpe then
             if mainframe.Visible then collapse()
-            else
-                miniwidget.Visible = false
-                restorestrip.Visible = false
-                mainframe.Visible = true
+            else showgui()
             end
         end
     end)
@@ -1079,65 +1150,270 @@ function multihubx:createwindow(config)
         function tab:addcolorpicker(cfg)
             cfg = cfg or {}
             local txt     = cfg.title    or "color"
-            local default = cfg.default  or Color3.new(1,1,1)
+            local default = cfg.default  or Color3.new(1, 1, 1)
             local cb      = cfg.callback
 
-            local palette = {
-                Color3.new(1,0,0),     Color3.new(0,0.5,1),  Color3.new(0,1,0),
-                Color3.new(1,0.5,0),   Color3.new(1,1,0),    Color3.new(1,0,1),
-                Color3.new(0.5,0,1),   Color3.new(0,1,1),    Color3.new(1,1,1),
-            }
+            -- current HSV state
+            local h, s, v = Color3.toHSV(default)
 
             local row = Instance.new("Frame")
-            row.Size = UDim2.new(1, 0, 0, 36)
+            row.Size = UDim2.new(1, 0, 0, 30)
             row.BackgroundColor3 = DARK3
             row.BorderSizePixel = 0
             row.Parent = page
 
-            local preview = Instance.new("Frame")
-            preview.Size = UDim2.new(0, 16, 0, 16)
-            preview.Position = UDim2.new(0, 10, 0.5, -8)
-            preview.BackgroundColor3 = default
-            preview.BorderSizePixel = 0; preview.Parent = row
-            makecorner(UDim.new(0, 3), preview)
-
             local lbl = Instance.new("TextLabel")
-            lbl.Size = UDim2.new(0.28, 0, 1, 0)
-            lbl.Position = UDim2.new(0, 32, 0, 0)
-            lbl.BackgroundTransparency = 1
-            lbl.Text = txt
-            lbl.TextColor3 = GREY2
-            lbl.TextSize = 12
-            lbl.Font = Enum.Font.Gotham
-            lbl.TextXAlignment = Enum.TextXAlignment.Left
-            lbl.Parent = row
+            lbl.Size = UDim2.new(1, -48, 1, 0)
+            lbl.Position = UDim2.new(0, 10, 0, 0)
+            lbl.BackgroundTransparency = 1; lbl.Text = txt
+            lbl.TextColor3 = GREY2; lbl.TextSize = 12; lbl.Font = Enum.Font.Gotham
+            lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.Parent = row
 
-            local crow = Instance.new("Frame")
-            crow.Size = UDim2.new(0.56, 0, 0, 22)
-            crow.Position = UDim2.new(0.42, 0, 0.5, -11)
-            crow.BackgroundTransparency = 1
-            crow.BorderSizePixel = 0
-            crow.Parent = row
+            -- swatch button (shows current colour, click to open picker)
+            local swatch = Instance.new("TextButton")
+            swatch.Size = UDim2.new(0, 22, 0, 22)
+            swatch.Position = UDim2.new(1, -34, 0.5, -11)
+            swatch.BackgroundColor3 = default
+            swatch.Text = ""; swatch.BorderSizePixel = 0; swatch.Parent = row
+            makecorner(UDim.new(0, 4), swatch)
+            makestroke(GREY7, 1, swatch)
 
-            local cl = Instance.new("UIListLayout")
-            cl.FillDirection = Enum.FillDirection.Horizontal
-            cl.Padding = UDim.new(0, 3)
-            cl.Parent = crow
+            -- ── popup ─────────────────────────────────────────────────────────
+            local popup = Instance.new("Frame")
+            popup.Size = UDim2.new(0, 220, 0, 230)
+            popup.BackgroundColor3 = Color3.fromRGB(14, 14, 14)
+            popup.BorderSizePixel = 0; popup.ZIndex = 200; popup.Visible = false
+            popup.Parent = screengui
+            makecorner(UDim.new(0, 6), popup)
+            local pstroke = makestroke(accentcolor, 1, popup)
+            regaccent(pstroke, "Color")
 
-            if cb then cb(default) end
+            -- title bar of popup
+            local ptitle = Instance.new("TextLabel")
+            ptitle.Size = UDim2.new(1, -8, 0, 22)
+            ptitle.Position = UDim2.new(0, 8, 0, 4)
+            ptitle.BackgroundTransparency = 1; ptitle.Text = txt
+            ptitle.TextColor3 = GREY2; ptitle.TextSize = 11; ptitle.Font = Enum.Font.GothamBold
+            ptitle.TextXAlignment = Enum.TextXAlignment.Left; ptitle.ZIndex = 201; ptitle.Parent = popup
 
-            for _, c in ipairs(palette) do
-                local sw = Instance.new("TextButton")
-                sw.Size = UDim2.new(0, 20, 0, 20)
-                sw.BackgroundColor3 = c
-                sw.Text = ""
-                sw.BorderSizePixel = 0
-                sw.Parent = crow
-                sw.MouseButton1Click:Connect(function()
-                    preview.BackgroundColor3 = c
-                    if cb then cb(c) end
-                end)
+            local pclosebtn = Instance.new("TextButton")
+            pclosebtn.Size = UDim2.new(0, 18, 0, 18)
+            pclosebtn.Position = UDim2.new(1, -22, 0, 4)
+            pclosebtn.BackgroundColor3 = Color3.fromRGB(60,10,10)
+            pclosebtn.Text = "x"; pclosebtn.TextColor3 = WHITE
+            pclosebtn.TextSize = 10; pclosebtn.Font = Enum.Font.GothamBold
+            pclosebtn.BorderSizePixel = 0; pclosebtn.ZIndex = 202; pclosebtn.Parent = popup
+            makecorner(UDim.new(0,3), pclosebtn)
+            pclosebtn.MouseButton1Click:Connect(function() popup.Visible = false end)
+
+            -- hue-saturation 2D canvas (180×130)
+            local canvas = Instance.new("ImageLabel")
+            canvas.Size = UDim2.new(0, 180, 0, 130)
+            canvas.Position = UDim2.new(0, 10, 0, 30)
+            canvas.BackgroundColor3 = Color3.new(1,0,0)
+            -- white→transparent gradient left→right, then black gradient top→bottom overlay
+            canvas.Image = "rbxassetid://4155801252"  -- hue-saturation square
+            canvas.ZIndex = 201; canvas.Parent = popup
+            makecorner(UDim.new(0,3), canvas)
+
+            -- hue rainbow bar (180×12)
+            local huebar = Instance.new("ImageLabel")
+            huebar.Size = UDim2.new(0, 180, 0, 12)
+            huebar.Position = UDim2.new(0, 10, 0, 166)
+            huebar.Image = "rbxassetid://698052001"  -- rainbow gradient
+            huebar.ZIndex = 201; huebar.Parent = popup
+            makecorner(UDim.new(0,2), huebar)
+
+            -- brightness bar (180×12)
+            local brightbar = Instance.new("Frame")
+            brightbar.Size = UDim2.new(0, 180, 0, 12)
+            brightbar.Position = UDim2.new(0, 10, 0, 182)
+            brightbar.BackgroundColor3 = Color3.new(1,1,1)
+            brightbar.ZIndex = 201; brightbar.Parent = popup
+            makecorner(UDim.new(0,2), brightbar)
+            -- gradient overlay black→transparent
+            local brightgrad = Instance.new("UIGradient")
+            brightgrad.Color = ColorSequence.new{
+                ColorSequenceKeypoint.new(0, Color3.new(1,1,1)),
+                ColorSequenceKeypoint.new(1, Color3.new(0,0,0))
+            }
+            brightgrad.Rotation = 0; brightgrad.Parent = brightbar
+
+            -- cursor on SV canvas
+            local cursor = Instance.new("Frame")
+            cursor.Size = UDim2.new(0, 10, 0, 10)
+            cursor.AnchorPoint = Vector2.new(0.5, 0.5)
+            cursor.BackgroundColor3 = WHITE
+            cursor.BorderSizePixel = 0; cursor.ZIndex = 203; cursor.Parent = canvas
+            makecorner(UDim.new(1,0), cursor)
+            makestroke(DARK, 1, cursor)
+
+            -- hue cursor
+            local huecursor = Instance.new("Frame")
+            huecursor.Size = UDim2.new(0, 4, 1, 2)
+            huecursor.AnchorPoint = Vector2.new(0.5, 0.5)
+            huecursor.Position = UDim2.new(0, 0, 0.5, 0)
+            huecursor.BackgroundColor3 = WHITE
+            huecursor.BorderSizePixel = 0; huecursor.ZIndex = 203; huecursor.Parent = huebar
+            makecorner(UDim.new(0,2), huecursor)
+            makestroke(DARK, 1, huecursor)
+
+            -- brightness cursor
+            local brightcursor = Instance.new("Frame")
+            brightcursor.Size = UDim2.new(0, 4, 1, 2)
+            brightcursor.AnchorPoint = Vector2.new(0.5, 0.5)
+            brightcursor.Position = UDim2.new(1, 0, 0.5, 0)
+            brightcursor.BackgroundColor3 = WHITE
+            brightcursor.BorderSizePixel = 0; brightcursor.ZIndex = 203; brightcursor.Parent = brightbar
+            makecorner(UDim.new(0,2), brightcursor)
+            makestroke(DARK, 1, brightcursor)
+
+            -- hex input row
+            local hexrow = Instance.new("Frame")
+            hexrow.Size = UDim2.new(0, 180, 0, 22)
+            hexrow.Position = UDim2.new(0, 10, 0, 198)
+            hexrow.BackgroundTransparency = 1
+            hexrow.ZIndex = 201; hexrow.Parent = popup
+
+            local hexprefix = Instance.new("TextLabel")
+            hexprefix.Size = UDim2.new(0, 16, 1, 0)
+            hexprefix.BackgroundTransparency = 1; hexprefix.Text = "#"
+            hexprefix.TextColor3 = GREY1; hexprefix.TextSize = 11; hexprefix.Font = Enum.Font.GothamBold
+            hexprefix.ZIndex = 202; hexprefix.Parent = hexrow
+
+            local hexbox = Instance.new("TextBox")
+            hexbox.Size = UDim2.new(0, 90, 1, 0)
+            hexbox.Position = UDim2.new(0, 16, 0, 0)
+            hexbox.BackgroundColor3 = DARK2
+            hexbox.Text = "FFFFFF"; hexbox.TextColor3 = GREY2
+            hexbox.TextSize = 11; hexbox.Font = Enum.Font.GothamSemibold
+            hexbox.BorderSizePixel = 0; hexbox.ZIndex = 202; hexbox.Parent = hexrow
+            makestroke(GREY7, 1, hexbox); makecorner(UDim.new(0,3), hexbox)
+
+            -- result preview
+            local resultprev = Instance.new("Frame")
+            resultprev.Size = UDim2.new(0, 60, 0, 20)
+            resultprev.Position = UDim2.new(0, 116, 0, 1)
+            resultprev.BackgroundColor3 = default
+            resultprev.BorderSizePixel = 0; resultprev.ZIndex = 202; resultprev.Parent = hexrow
+            makecorner(UDim.new(0,4), resultprev); makestroke(GREY7, 1, resultprev)
+
+            -- helper: color→hex string
+            local function color3tohex(c)
+                return string.format("%02X%02X%02X",
+                    math.floor(c.R*255+0.5),
+                    math.floor(c.G*255+0.5),
+                    math.floor(c.B*255+0.5))
             end
+            -- helper: hex→Color3
+            local function hextoc3(hex)
+                hex = hex:gsub("#",""):sub(1,6)
+                if #hex < 6 then return nil end
+                local r = tonumber(hex:sub(1,2),16)
+                local g = tonumber(hex:sub(3,4),16)
+                local b = tonumber(hex:sub(5,6),16)
+                if not r or not g or not b then return nil end
+                return Color3.fromRGB(r,g,b)
+            end
+
+            local function applycolor()
+                local col = Color3.fromHSV(h, s, v)
+                swatch.BackgroundColor3 = col
+                resultprev.BackgroundColor3 = col
+                canvas.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
+                -- update brightness bar gradient from pure hue to black
+                brightbar.BackgroundColor3 = Color3.fromHSV(h, s, 1)
+                hexbox.Text = color3tohex(col)
+                cursor.Position = UDim2.new(s, 0, 1-v, 0)
+                huecursor.Position = UDim2.new(h, 0, 0.5, 0)
+                brightcursor.Position = UDim2.new(v, 0, 0.5, 0)
+                if cb then cb(col) end
+            end
+
+            -- position popup near swatch when opened
+            local function openPopup()
+                local ap = swatch.AbsolutePosition
+                local ps = popup.AbsoluteSize
+                local vpsize = workspace.CurrentCamera.ViewportSize
+                local px = math.clamp(ap.X - 10, 0, vpsize.X - 225)
+                local py = math.clamp(ap.Y + 28, 0, vpsize.Y - 235)
+                popup.Position = UDim2.new(0, px, 0, py)
+                popup.Visible = true
+                applycolor()
+            end
+
+            swatch.MouseButton1Click:Connect(function()
+                if popup.Visible then popup.Visible = false else openPopup() end
+            end)
+
+            -- SV canvas drag
+            local svdrag = false
+            canvas.InputBegan:Connect(function(inp)
+                if inp.UserInputType == Enum.UserInputType.MouseButton1 then svdrag = true
+                    local rel = inp.Position - canvas.AbsolutePosition
+                    s = math.clamp(rel.X / canvas.AbsoluteSize.X, 0, 1)
+                    v = 1 - math.clamp(rel.Y / canvas.AbsoluteSize.Y, 0, 1)
+                    applycolor()
+                end
+            end)
+            uis.InputEnded:Connect(function(inp)
+                if inp.UserInputType == Enum.UserInputType.MouseButton1 then svdrag = false end
+            end)
+            uis.InputChanged:Connect(function(inp)
+                if svdrag and inp.UserInputType == Enum.UserInputType.MouseMovement then
+                    local rel = inp.Position - canvas.AbsolutePosition
+                    s = math.clamp(rel.X / canvas.AbsoluteSize.X, 0, 1)
+                    v = 1 - math.clamp(rel.Y / canvas.AbsoluteSize.Y, 0, 1)
+                    applycolor()
+                end
+            end)
+
+            -- hue bar drag
+            local huedrag = false
+            huebar.InputBegan:Connect(function(inp)
+                if inp.UserInputType == Enum.UserInputType.MouseButton1 then huedrag = true
+                    h = math.clamp((inp.Position.X - huebar.AbsolutePosition.X) / huebar.AbsoluteSize.X, 0, 1)
+                    applycolor()
+                end
+            end)
+            uis.InputChanged:Connect(function(inp)
+                if huedrag and inp.UserInputType == Enum.UserInputType.MouseMovement then
+                    h = math.clamp((inp.Position.X - huebar.AbsolutePosition.X) / huebar.AbsoluteSize.X, 0, 1)
+                    applycolor()
+                end
+            end)
+            uis.InputEnded:Connect(function(inp)
+                if inp.UserInputType == Enum.UserInputType.MouseButton1 then huedrag = false end
+            end)
+
+            -- brightness bar drag
+            local brightdrag = false
+            brightbar.InputBegan:Connect(function(inp)
+                if inp.UserInputType == Enum.UserInputType.MouseButton1 then brightdrag = true
+                    v = math.clamp((inp.Position.X - brightbar.AbsolutePosition.X) / brightbar.AbsoluteSize.X, 0, 1)
+                    applycolor()
+                end
+            end)
+            uis.InputChanged:Connect(function(inp)
+                if brightdrag and inp.UserInputType == Enum.UserInputType.MouseMovement then
+                    v = math.clamp((inp.Position.X - brightbar.AbsolutePosition.X) / brightbar.AbsoluteSize.X, 0, 1)
+                    applycolor()
+                end
+            end)
+            uis.InputEnded:Connect(function(inp)
+                if inp.UserInputType == Enum.UserInputType.MouseButton1 then brightdrag = false end
+            end)
+
+            -- hex input
+            hexbox.FocusLost:Connect(function()
+                local c = hextoc3(hexbox.Text)
+                if c then
+                    h, s, v = Color3.toHSV(c)
+                    applycolor()
+                end
+            end)
+
+            applycolor()
         end
 
         function tab:addkeybind(cfg)
@@ -1456,6 +1732,104 @@ function multihubx:createwindow(config)
             local rbs = makestroke(accentcolor, 1, refreshbtn)
             regaccent(rbs, "Color")
             refreshbtn.MouseButton1Click:Connect(rebuildlist)
+        end
+
+        function tab:addblurslider()
+            -- toggle row
+            local togglerow = Instance.new("Frame")
+            togglerow.Size = UDim2.new(1, 0, 0, 30)
+            togglerow.BackgroundColor3 = DARK3
+            togglerow.BorderSizePixel = 0; togglerow.Parent = page
+
+            local togtitle = Instance.new("TextLabel")
+            togtitle.Size = UDim2.new(1, -50, 1, 0)
+            togtitle.Position = UDim2.new(0, 10, 0, 0)
+            togtitle.BackgroundTransparency = 1; togtitle.Text = "background blur"
+            togtitle.TextColor3 = GREY3; togtitle.TextSize = 12; togtitle.Font = Enum.Font.Gotham
+            togtitle.TextXAlignment = Enum.TextXAlignment.Left; togtitle.Parent = togglerow
+
+            local togbg2 = Instance.new("Frame")
+            togbg2.Size = UDim2.new(0, 36, 0, 18)
+            togbg2.Position = UDim2.new(1, -44, 0.5, -9)
+            togbg2.BackgroundColor3 = GREY5; togbg2.BorderSizePixel = 0; togbg2.Parent = togglerow
+            makecorner(UDim.new(1,0), togbg2)
+            local circle2 = Instance.new("Frame")
+            circle2.Size = UDim2.new(0, 12, 0, 12)
+            circle2.Position = UDim2.new(0, 3, 0.5, -6)
+            circle2.BackgroundColor3 = GREY1; circle2.BorderSizePixel = 0; circle2.Parent = togbg2
+            makecorner(UDim.new(1,0), circle2)
+
+            local function setblurtog(val)
+                blurenabled = val
+                tweenservice:Create(circle2, TweenInfo.new(0.12), {
+                    Position = val and UDim2.new(1,-15,0.5,-6) or UDim2.new(0,3,0.5,-6)
+                }):Play()
+                tweenservice:Create(togbg2, TweenInfo.new(0.12), {
+                    BackgroundColor3 = val and accentcolor or GREY5
+                }):Play()
+                tweenservice:Create(circle2, TweenInfo.new(0.12), {
+                    BackgroundColor3 = val and WHITE or GREY1
+                }):Play()
+                if val and mainframe.Visible then
+                    blureffect.Size = 0; blureffect.Enabled = true
+                    tweenservice:Create(blureffect, TweenInfo.new(0.25), { Size = blurintensity }):Play()
+                else
+                    tweenservice:Create(blureffect, TweenInfo.new(0.25), { Size = 0 }):Play()
+                    task.delay(0.25, function() blureffect.Enabled = false end)
+                end
+            end
+
+            local clickbtn2 = Instance.new("TextButton")
+            clickbtn2.Size = UDim2.new(1,0,1,0); clickbtn2.BackgroundTransparency = 1
+            clickbtn2.Text = ""; clickbtn2.Parent = togglerow
+            clickbtn2.MouseButton1Click:Connect(function() setblurtog(not blurenabled) end)
+
+            -- intensity slider
+            local lbl2 = Instance.new("TextLabel")
+            lbl2.Size = UDim2.new(1, 0, 0, 18)
+            lbl2.BackgroundTransparency = 1; lbl2.Text = "blur intensity: 20"
+            lbl2.TextColor3 = GREY1; lbl2.TextSize = 11; lbl2.Font = Enum.Font.Gotham
+            lbl2.TextXAlignment = Enum.TextXAlignment.Left; lbl2.BorderSizePixel = 0; lbl2.Parent = page
+            makepad(0, 4, 0, 0, lbl2)
+
+            local track2 = Instance.new("Frame")
+            track2.Size = UDim2.new(1, -8, 0, 5)
+            track2.BackgroundColor3 = GREY4; track2.BorderSizePixel = 0; track2.Parent = page
+
+            local fill2 = Instance.new("Frame")
+            fill2.Size = UDim2.new(0.4, 0, 1, 0)  -- default 20/50
+            fill2.BackgroundColor3 = accentcolor; fill2.BorderSizePixel = 0; fill2.Parent = track2
+            regaccent(fill2, "BackgroundColor3")
+
+            local knob2 = Instance.new("Frame")
+            knob2.Size = UDim2.new(0, 11, 0, 11)
+            knob2.Position = UDim2.new(1, -5, 0.5, -5)
+            knob2.BackgroundColor3 = Color3.fromRGB(230,230,230); knob2.BorderSizePixel = 0; knob2.Parent = fill2
+            makecorner(UDim.new(1,0), knob2)
+
+            local bluractive = false
+            local function updateblur(ix)
+                local rel = math.clamp((ix - track2.AbsolutePosition.X) / track2.AbsoluteSize.X, 0, 1)
+                fill2.Size = UDim2.new(rel, 0, 1, 0)
+                blurintensity = math.floor(rel * 56 + 0.5)  -- 0–56 is Roblox BlurEffect range
+                lbl2.Text = "blur intensity: " .. blurintensity
+                if blurenabled and mainframe.Visible then
+                    blureffect.Size = blurintensity
+                end
+            end
+
+            track2.InputBegan:Connect(function(inp)
+                if inp.UserInputType == Enum.UserInputType.MouseButton1 then bluractive = true; updateblur(inp.Position.X) end
+            end)
+            knob2.InputBegan:Connect(function(inp)
+                if inp.UserInputType == Enum.UserInputType.MouseButton1 then bluractive = true end
+            end)
+            uis.InputEnded:Connect(function(inp)
+                if inp.UserInputType == Enum.UserInputType.MouseButton1 then bluractive = false end
+            end)
+            uis.InputChanged:Connect(function(inp)
+                if bluractive and inp.UserInputType == Enum.UserInputType.MouseMovement then updateblur(inp.Position.X) end
+            end)
         end
 
         function tab:addtransparencyslider()
