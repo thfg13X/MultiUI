@@ -59,21 +59,19 @@ function multihubx:createwindow(config)
     screengui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     screengui.Parent         = playergui
 
-    -- blur effect (behind game world, toggled with GUI visibility)
     local lighting = game:GetService("Lighting")
     local blureffect = Instance.new("BlurEffect")
     blureffect.Size    = 0
     blureffect.Enabled = false
     blureffect.Parent  = lighting
     local blurenabled  = false
-    local blurintensity = 20  -- default blur size when enabled
+    local blurintensity = 20
 
     local accentcolor    = Color3.fromRGB(210, 25, 25)
     local accentobjs     = {}
     local keybindregistry = {}
     local notifstack     = {}
 
-    -- ── floating keybind panel (right side, draggable) ──────────────────────
     local kbfloat = Instance.new("Frame")
     kbfloat.Name = "keybindpanel"
     kbfloat.Size = UDim2.new(0, 200, 0, 28)
@@ -116,7 +114,6 @@ function multihubx:createwindow(config)
     kbfloatpad.PaddingLeft = UDim.new(0, 4); kbfloatpad.PaddingRight = UDim.new(0, 4)
     kbfloatpad.Parent = kbfloatlist
 
-    -- header dragging
     local kbfdrag, kbfdragstart, kbfstartpos = false, nil, nil
     kbfloatherbar.InputBegan:Connect(function(inp)
         if inp.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -214,7 +211,6 @@ function multihubx:createwindow(config)
     notifstackframe.ZIndex = 50
     notifstackframe.Parent = screengui
 
-    -- sendnotif accepts either a string OR {title=..., text=...}
     local function sendnotif(data)
         local ntitle, ntext
         if type(data) == "table" then
@@ -236,7 +232,6 @@ function multihubx:createwindow(config)
         nf.Parent = notifstackframe
         local ns = makestroke(accentcolor, 1, nf)
 
-        -- left accent bar
         local accentbar = Instance.new("Frame")
         accentbar.Size = UDim2.new(0, 3, 1, -4)
         accentbar.Position = UDim2.new(0, 0, 0, 2)
@@ -560,7 +555,6 @@ function multihubx:createwindow(config)
     restorebtn.Parent = restorestrip
     regaccent(restorebtn, "TextColor3")
 
-    -- restore strip dragging
     local rsdragging, rsdragstart, rsstartpos, rshasmoved = false, nil, nil, false
     restorestrip.InputBegan:Connect(function(inp)
         if inp.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -663,7 +657,7 @@ function multihubx:createwindow(config)
             maindragging = false; minidragging = false
             if rsdragging then
                 rsdragging = false
-                -- reset moved flag after a tick so click handler fires correctly next time
+
                 task.delay(0, function() rshasmoved = false end)
             end
             if minidragging then
@@ -1070,7 +1064,6 @@ function multihubx:createwindow(config)
             local values = cfg.values   or {}
             local cb     = cfg.callback
 
-            -- outer container grows when open
             local container = Instance.new("Frame")
             container.Size = UDim2.new(1, 0, 0, 38)
             container.BackgroundColor3 = DARK3
@@ -1079,7 +1072,6 @@ function multihubx:createwindow(config)
             container.ZIndex = 5
             container.Parent = page
 
-            -- label above the button
             local lbl = Instance.new("TextLabel")
             lbl.Size = UDim2.new(1, -10, 0, 16)
             lbl.Position = UDim2.new(0, 10, 0, 2)
@@ -1092,7 +1084,6 @@ function multihubx:createwindow(config)
             lbl.ZIndex = 5
             lbl.Parent = container
 
-            -- full-width button
             local dbtn = Instance.new("TextButton")
             dbtn.Size = UDim2.new(1, -16, 0, 24)
             dbtn.Position = UDim2.new(0, 8, 0, 18)
@@ -1157,7 +1148,7 @@ function multihubx:createwindow(config)
                         tweenservice:Create(ddframe, TweenInfo.new(0.12), { Size = UDim2.new(1,-16,0,0) }):Play()
                         task.wait(0.12); ddframe.Visible = false
                         container.Size = UDim2.new(1, 0, 0, 38)
-                        -- refresh active color on all opts
+
                         for _, c2 in ipairs(ddframe:GetChildren()) do
                             if c2:IsA("TextButton") then
                                 c2.TextColor3 = c2.Text == currentval and accentcolor or GREY2
@@ -1197,7 +1188,6 @@ function multihubx:createwindow(config)
             local default = cfg.default  or Color3.new(1, 1, 1)
             local cb      = cfg.callback
 
-            -- current HSV state
             local h, s, v = Color3.toHSV(default)
 
             local row = Instance.new("Frame")
@@ -1213,7 +1203,6 @@ function multihubx:createwindow(config)
             lbl.TextColor3 = GREY2; lbl.TextSize = 12; lbl.Font = Enum.Font.Gotham
             lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.Parent = row
 
-            -- swatch button (shows current colour, click to open picker)
             local swatch = Instance.new("TextButton")
             swatch.Size = UDim2.new(0, 22, 0, 22)
             swatch.Position = UDim2.new(1, -34, 0.5, -11)
@@ -1222,7 +1211,6 @@ function multihubx:createwindow(config)
             makecorner(UDim.new(0, 4), swatch)
             makestroke(GREY7, 1, swatch)
 
-            -- ── popup ─────────────────────────────────────────────────────────
             local popup = Instance.new("Frame")
             popup.Size = UDim2.new(0, 220, 0, 230)
             popup.BackgroundColor3 = Color3.fromRGB(14, 14, 14)
@@ -1232,7 +1220,6 @@ function multihubx:createwindow(config)
             local pstroke = makestroke(accentcolor, 1, popup)
             regaccent(pstroke, "Color")
 
-            -- title bar of popup
             local ptitle = Instance.new("TextLabel")
             ptitle.Size = UDim2.new(1, -8, 0, 22)
             ptitle.Position = UDim2.new(0, 8, 0, 4)
@@ -1250,32 +1237,29 @@ function multihubx:createwindow(config)
             makecorner(UDim.new(0,3), pclosebtn)
             pclosebtn.MouseButton1Click:Connect(function() popup.Visible = false end)
 
-            -- hue-saturation 2D canvas (180×130)
             local canvas = Instance.new("ImageLabel")
             canvas.Size = UDim2.new(0, 180, 0, 130)
             canvas.Position = UDim2.new(0, 10, 0, 30)
             canvas.BackgroundColor3 = Color3.new(1,0,0)
-            -- white→transparent gradient left→right, then black gradient top→bottom overlay
-            canvas.Image = "rbxassetid://4155801252"  -- hue-saturation square
+
+            canvas.Image = "rbxassetid://4155801252"
             canvas.ZIndex = 201; canvas.Parent = popup
             makecorner(UDim.new(0,3), canvas)
 
-            -- hue rainbow bar (180×12)
             local huebar = Instance.new("ImageLabel")
             huebar.Size = UDim2.new(0, 180, 0, 12)
             huebar.Position = UDim2.new(0, 10, 0, 166)
-            huebar.Image = "rbxassetid://698052001"  -- rainbow gradient
+            huebar.Image = "rbxassetid://698052001"
             huebar.ZIndex = 201; huebar.Parent = popup
             makecorner(UDim.new(0,2), huebar)
 
-            -- brightness bar (180×12)
             local brightbar = Instance.new("Frame")
             brightbar.Size = UDim2.new(0, 180, 0, 12)
             brightbar.Position = UDim2.new(0, 10, 0, 182)
             brightbar.BackgroundColor3 = Color3.new(1,1,1)
             brightbar.ZIndex = 201; brightbar.Parent = popup
             makecorner(UDim.new(0,2), brightbar)
-            -- gradient overlay black→transparent
+
             local brightgrad = Instance.new("UIGradient")
             brightgrad.Color = ColorSequence.new{
                 ColorSequenceKeypoint.new(0, Color3.new(1,1,1)),
@@ -1283,7 +1267,6 @@ function multihubx:createwindow(config)
             }
             brightgrad.Rotation = 0; brightgrad.Parent = brightbar
 
-            -- cursor on SV canvas
             local cursor = Instance.new("Frame")
             cursor.Size = UDim2.new(0, 10, 0, 10)
             cursor.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -1292,7 +1275,6 @@ function multihubx:createwindow(config)
             makecorner(UDim.new(1,0), cursor)
             makestroke(DARK, 1, cursor)
 
-            -- hue cursor
             local huecursor = Instance.new("Frame")
             huecursor.Size = UDim2.new(0, 4, 1, 2)
             huecursor.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -1302,7 +1284,6 @@ function multihubx:createwindow(config)
             makecorner(UDim.new(0,2), huecursor)
             makestroke(DARK, 1, huecursor)
 
-            -- brightness cursor
             local brightcursor = Instance.new("Frame")
             brightcursor.Size = UDim2.new(0, 4, 1, 2)
             brightcursor.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -1312,7 +1293,6 @@ function multihubx:createwindow(config)
             makecorner(UDim.new(0,2), brightcursor)
             makestroke(DARK, 1, brightcursor)
 
-            -- hex input row
             local hexrow = Instance.new("Frame")
             hexrow.Size = UDim2.new(0, 180, 0, 22)
             hexrow.Position = UDim2.new(0, 10, 0, 198)
@@ -1334,7 +1314,6 @@ function multihubx:createwindow(config)
             hexbox.BorderSizePixel = 0; hexbox.ZIndex = 202; hexbox.Parent = hexrow
             makestroke(GREY7, 1, hexbox); makecorner(UDim.new(0,3), hexbox)
 
-            -- result preview
             local resultprev = Instance.new("Frame")
             resultprev.Size = UDim2.new(0, 60, 0, 20)
             resultprev.Position = UDim2.new(0, 116, 0, 1)
@@ -1342,14 +1321,13 @@ function multihubx:createwindow(config)
             resultprev.BorderSizePixel = 0; resultprev.ZIndex = 202; resultprev.Parent = hexrow
             makecorner(UDim.new(0,4), resultprev); makestroke(GREY7, 1, resultprev)
 
-            -- helper: color→hex string
             local function color3tohex(c)
                 return string.format("%02X%02X%02X",
                     math.floor(c.R*255+0.5),
                     math.floor(c.G*255+0.5),
                     math.floor(c.B*255+0.5))
             end
-            -- helper: hex→Color3
+
             local function hextoc3(hex)
                 hex = hex:gsub("#",""):sub(1,6)
                 if #hex < 6 then return nil end
@@ -1365,7 +1343,7 @@ function multihubx:createwindow(config)
                 swatch.BackgroundColor3 = col
                 resultprev.BackgroundColor3 = col
                 canvas.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
-                -- update brightness bar gradient from pure hue to black
+
                 brightbar.BackgroundColor3 = Color3.fromHSV(h, s, 1)
                 hexbox.Text = color3tohex(col)
                 cursor.Position = UDim2.new(s, 0, 1-v, 0)
@@ -1374,7 +1352,6 @@ function multihubx:createwindow(config)
                 if cb then cb(col) end
             end
 
-            -- position popup near swatch when opened
             local function openPopup()
                 local ap = swatch.AbsolutePosition
                 local ps = popup.AbsoluteSize
@@ -1390,7 +1367,6 @@ function multihubx:createwindow(config)
                 if popup.Visible then popup.Visible = false else openPopup() end
             end)
 
-            -- single drag state: "sv", "hue", "bright", or nil
             local dragmode = nil
 
             canvas.InputBegan:Connect(function(inp)
@@ -1438,7 +1414,7 @@ function multihubx:createwindow(config)
                     applycolor()
                 end
             end)
-            -- clear drag on mouse release, but only when this picker owns the drag
+
             local function clearDragIfOwned(inp)
                 if inp.UserInputType == Enum.UserInputType.MouseButton1 and dragmode ~= nil then
                     dragmode = nil
@@ -1454,7 +1430,6 @@ function multihubx:createwindow(config)
                 end
             end)
 
-            -- hex input
             hexbox.FocusLost:Connect(function()
                 local c = hextoc3(hexbox.Text)
                 if c then
@@ -1476,7 +1451,20 @@ function multihubx:createwindow(config)
             local togstate   = false
             local listening  = false
 
-            -- shared toggle bg (left side of row)
+            local function settogtoggle(v)
+                togstate = v
+                tweenservice:Create(circle, TweenInfo.new(0.12), {
+                    Position = v and UDim2.new(1,-15,0.5,-6) or UDim2.new(0,3,0.5,-6)
+                }):Play()
+                tweenservice:Create(togbg, TweenInfo.new(0.12), {
+                    BackgroundColor3 = v and accentcolor or GREY5
+                }):Play()
+                tweenservice:Create(circle, TweenInfo.new(0.12), {
+                    BackgroundColor3 = v and WHITE or GREY1
+                }):Play()
+                if cb then cb(v) end
+            end
+
             local row = Instance.new("Frame")
             row.Size = UDim2.new(1, 0, 0, 32)
             row.BackgroundColor3 = DARK3
@@ -1494,7 +1482,6 @@ function multihubx:createwindow(config)
             lbl.TextXAlignment = Enum.TextXAlignment.Left
             lbl.Parent = row
 
-            -- toggle pill (same as addtoggle)
             local togbg = Instance.new("Frame")
             togbg.Size = UDim2.new(0, 36, 0, 18)
             togbg.Position = UDim2.new(1, -108, 0.5, -9)
@@ -1511,12 +1498,11 @@ function multihubx:createwindow(config)
             circle.Parent = togbg
             makecorner(UDim.new(1,0), circle)
 
-            -- keybind button (right side)
             local kbtn = Instance.new("TextButton")
             kbtn.Size = UDim2.new(0, 58, 0, 20)
             kbtn.Position = UDim2.new(1, -62, 0.5, -10)
             kbtn.BackgroundColor3 = GREY6
-            kbtn.Text = currentkey == "none" and "[ -- ]" or ("[" .. string.lower(currentkey) .. "]")
+            kbtn.Text = currentkey == "none" and "[ - ]" or ("[" .. string.lower(currentkey) .. "]")
             kbtn.TextColor3 = GREY1
             kbtn.TextSize = 10
             kbtn.Font = Enum.Font.GothamSemibold
@@ -1524,106 +1510,63 @@ function multihubx:createwindow(config)
             kbtn.Parent = row
             makestroke(GREY7, 1, kbtn)
 
-            -- context menu (right click on keybind button)
-            local ctxmenu = Instance.new("Frame")
-            ctxmenu.Size = UDim2.new(0, 130, 0, 0)
-            ctxmenu.BackgroundColor3 = DARK4
-            ctxmenu.BorderSizePixel = 0
-            ctxmenu.ZIndex = 50
-            ctxmenu.Visible = false
-            ctxmenu.ClipsDescendants = true
-            ctxmenu.Parent = screengui
-            makestroke(accentcolor, 1, ctxmenu)
-            regaccent(makestroke(accentcolor, 1, ctxmenu), "Color")
-            makecorner(UDim.new(0, 4), ctxmenu)
-            local ctxlayout = Instance.new("UIListLayout")
-            ctxlayout.SortOrder = Enum.SortOrder.LayoutOrder
-            ctxlayout.Parent = ctxmenu
-
-            local ctxjustopened = false
-
-            local function closectx()
-                tweenservice:Create(ctxmenu, TweenInfo.new(0.1), {Size = UDim2.new(0,130,0,0)}):Play()
-                task.wait(0.1); ctxmenu.Visible = false
-            end
-
-            local function makectxitem(label, color, onclick)
-                local item = Instance.new("TextButton")
-                item.Size = UDim2.new(1, 0, 0, 26)
-                item.BackgroundColor3 = DARK4
-                item.Text = label
-                item.TextColor3 = color or GREY2
-                item.TextSize = 11
-                item.Font = Enum.Font.GothamSemibold
-                item.BorderSizePixel = 0
-                item.AutoButtonColor = false
-                item.ZIndex = 51
-                item.Parent = ctxmenu
-                item.MouseEnter:Connect(function() item.BackgroundColor3 = GREY6 end)
-                item.MouseLeave:Connect(function() item.BackgroundColor3 = DARK4 end)
-                item.MouseButton1Click:Connect(function() closectx(); onclick() end)
-            end
-
-            makectxitem("set keybind", GREY3, function()
+            kbtn.MouseButton1Click:Connect(function()
+                if listening then return end
                 listening = true
-                kbtn.Text = "[ ... ]"; kbtn.TextColor3 = accentcolor
-            end)
-            makectxitem("delete keybind", Color3.fromRGB(200, 50, 50), function()
-                currentkey = "none"
-                kbtn.Text = "[ -- ]"; kbtn.TextColor3 = GREY1
+                kbtn.Text = "[ ... ]"
+                kbtn.TextColor3 = accentcolor
+                kbtn.BackgroundColor3 = Color3.fromRGB(20, 10, 10)
             end)
 
-            -- right click opens context menu
             kbtn.MouseButton2Click:Connect(function()
-                local ap = kbtn.AbsolutePosition
-                ctxmenu.Position = UDim2.new(0, ap.X, 0, ap.Y + 24)
-                ctxmenu.Visible = true
-                ctxmenu.Size = UDim2.new(0, 130, 0, 0)
-                ctxjustopened = true
-                tweenservice:Create(ctxmenu, TweenInfo.new(0.1), {Size = UDim2.new(0,130,0,52)}):Play()
+                currentkey = "none"
+                kbtn.Text = "[ - ]"
+                kbtn.TextColor3 = GREY1
+                kbtn.BackgroundColor3 = GREY6
             end)
 
-            -- close ctx when clicking elsewhere (not on the menu itself)
-            uis.InputBegan:Connect(function(inp)
-                if ctxmenu.Visible and inp.UserInputType == Enum.UserInputType.MouseButton1 then
-                    if ctxjustopened then ctxjustopened = false; return end
-                    closectx()
-                end
-            end)
-
-            local function settogtoggle(v)
-                togstate = v
-                tweenservice:Create(circle, TweenInfo.new(0.12), {
-                    Position = v and UDim2.new(1,-15,0.5,-6) or UDim2.new(0,3,0.5,-6)
-                }):Play()
-                tweenservice:Create(togbg, TweenInfo.new(0.12), {
-                    BackgroundColor3 = v and accentcolor or GREY5
-                }):Play()
-                tweenservice:Create(circle, TweenInfo.new(0.12), {
-                    BackgroundColor3 = v and WHITE or GREY1
-                }):Play()
-                if cb then cb(v) end
-            end
-
-            -- left click on row = toggle on/off
-            local clickbtn = Instance.new("TextButton")
-            clickbtn.Size = UDim2.new(1, -130, 1, 0)
-            clickbtn.BackgroundTransparency = 1
-            clickbtn.Text = ""
-            clickbtn.Parent = row
-            clickbtn.MouseButton1Click:Connect(function()
+            local rowclick = Instance.new("TextButton")
+            rowclick.Size = UDim2.new(1, -66, 1, 0)
+            rowclick.BackgroundTransparency = 1
+            rowclick.Text = ""
+            rowclick.ZIndex = 2
+            rowclick.Parent = row
+            rowclick.MouseButton1Click:Connect(function()
+                if listening then return end
                 settogtoggle(not togstate)
             end)
 
-            -- key press toggles state if keybind is set
+            local togclick = Instance.new("TextButton")
+            togclick.Size = UDim2.new(0, 42, 0, 22)
+            togclick.Position = UDim2.new(1, -111, 0.5, -11)
+            togclick.BackgroundTransparency = 1
+            togclick.Text = ""
+            togclick.ZIndex = 3
+            togclick.Parent = row
+            togclick.MouseButton1Click:Connect(function()
+                if listening then return end
+                settogtoggle(not togstate)
+            end)
+
             uis.InputBegan:Connect(function(inp, gpe)
-                if listening and inp.UserInputType == Enum.UserInputType.Keyboard then
-                    listening = false
-                    currentkey = inp.KeyCode.Name
-                    kbtn.Text = "[" .. string.lower(currentkey) .. "]"
-                    kbtn.TextColor3 = GREY1
-                elseif not listening and inp.UserInputType == Enum.UserInputType.Keyboard
-                    and currentkey ~= "none" and inp.KeyCode.Name == currentkey and not gpe then
+                if listening then
+                    if inp.UserInputType == Enum.UserInputType.Keyboard then
+                        listening = false
+                        currentkey = inp.KeyCode.Name
+                        kbtn.Text = "[" .. string.lower(currentkey) .. "]"
+                        kbtn.TextColor3 = GREY1
+                        kbtn.BackgroundColor3 = GREY6
+                    elseif inp.UserInputType == Enum.UserInputType.MouseButton1
+                        or inp.UserInputType == Enum.UserInputType.MouseButton2 then
+                        listening = false
+                        kbtn.Text = currentkey == "none" and "[ - ]" or ("[" .. string.lower(currentkey) .. "]")
+                        kbtn.TextColor3 = GREY1
+                        kbtn.BackgroundColor3 = GREY6
+                    end
+                    return
+                end
+                if not gpe and inp.UserInputType == Enum.UserInputType.Keyboard
+                    and currentkey ~= "none" and inp.KeyCode.Name == currentkey then
                     settogtoggle(not togstate)
                 end
             end)
@@ -1639,7 +1582,7 @@ function multihubx:createwindow(config)
 
         function tab:addthemepicker()
             self:addsection("theme color")
-            -- reuse addcolorpicker but wire it to updatetheme
+
             self:addcolorpicker({
                 title    = "accent color",
                 default  = accentcolor,
@@ -1682,7 +1625,6 @@ function multihubx:createwindow(config)
                     row2.BorderSizePixel = 0
                     row2.Parent = listcontainer
 
-                    -- active dot
                     local dot = Instance.new("Frame")
                     dot.Size = UDim2.new(0, 6, 0, 6)
                     dot.Position = UDim2.new(0, 0, 0.5, -3)
@@ -1738,14 +1680,13 @@ function multihubx:createwindow(config)
 
             rebuildlist()
 
-            -- auto refresh every 0.5s so active states stay current
             task.spawn(function()
                 while screengui.Parent do task.wait(0.5); rebuildlist() end
             end)
         end
 
         function tab:addblurslider()
-            -- toggle row
+
             local togglerow = Instance.new("Frame")
             togglerow.Size = UDim2.new(1, 0, 0, 30)
             togglerow.BackgroundColor3 = DARK3
@@ -1794,7 +1735,6 @@ function multihubx:createwindow(config)
             clickbtn2.Text = ""; clickbtn2.Parent = togglerow
             clickbtn2.MouseButton1Click:Connect(function() setblurtog(not blurenabled) end)
 
-            -- intensity slider
             local lbl2 = Instance.new("TextLabel")
             lbl2.Size = UDim2.new(1, 0, 0, 18)
             lbl2.BackgroundTransparency = 1; lbl2.Text = "blur intensity: 20"
@@ -1807,7 +1747,7 @@ function multihubx:createwindow(config)
             track2.BackgroundColor3 = GREY4; track2.BorderSizePixel = 0; track2.Parent = page
 
             local fill2 = Instance.new("Frame")
-            fill2.Size = UDim2.new(0.4, 0, 1, 0)  -- default 20/50
+            fill2.Size = UDim2.new(0.4, 0, 1, 0)
             fill2.BackgroundColor3 = accentcolor; fill2.BorderSizePixel = 0; fill2.Parent = track2
             regaccent(fill2, "BackgroundColor3")
 
@@ -1821,7 +1761,7 @@ function multihubx:createwindow(config)
             local function updateblur(ix)
                 local rel = math.clamp((ix - track2.AbsolutePosition.X) / track2.AbsoluteSize.X, 0, 1)
                 fill2.Size = UDim2.new(rel, 0, 1, 0)
-                blurintensity = math.floor(rel * 56 + 0.5)  -- 0–56 is Roblox BlurEffect range
+                blurintensity = math.floor(rel * 56 + 0.5)
                 lbl2.Text = "blur intensity: " .. blurintensity
                 if blurenabled and mainframe.Visible then
                     blureffect.Size = blurintensity
