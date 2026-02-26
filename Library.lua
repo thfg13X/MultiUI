@@ -405,6 +405,7 @@ function multihubx:createwindow(config)
     end)
 
     -- ── main frame ───────────────────────────────────────────────────────────────
+    -- Outer: rounded + stroke, NO ClipsDescendants so corners aren't cut
     local mainframe = Instance.new("Frame")
     mainframe.Name = "mainframe"
     mainframe.Size = size
@@ -412,11 +413,19 @@ function multihubx:createwindow(config)
     mainframe.BackgroundColor3 = DARK
     mainframe.BackgroundTransparency = 0
     mainframe.BorderSizePixel = 0
-    mainframe.ClipsDescendants = true
+    mainframe.ClipsDescendants = false
     mainframe.Parent = screengui
     makecorner(UDim.new(0, 12), mainframe)
     local mainstroke = makestroke(accentcolor, 2, mainframe)
     regaccent(mainstroke, "Color")
+    -- Inner clip frame so content is still clipped without ruining corners
+    local mainclip = Instance.new("Frame")
+    mainclip.Size = UDim2.new(1, 0, 1, 0)
+    mainclip.BackgroundTransparency = 1
+    mainclip.BorderSizePixel = 0
+    mainclip.ClipsDescendants = true
+    mainclip.Parent = mainframe
+    makecorner(UDim.new(0, 12), mainclip)
 
     local titlebarH = subtitle ~= "" and 46 or 34
 
@@ -425,7 +434,7 @@ function multihubx:createwindow(config)
     titlebar.BackgroundColor3 = DARK5
     titlebar.BorderSizePixel = 0
     titlebar.ZIndex = 2
-    titlebar.Parent = mainframe
+    titlebar.Parent = mainclip
 
     local titlelbl = Instance.new("TextLabel")
     titlelbl.Size = UDim2.new(1, -70, 0, subtitle ~= "" and 22 or 34)
@@ -488,7 +497,7 @@ function multihubx:createwindow(config)
     sep.BackgroundColor3 = accentcolor
     sep.BorderSizePixel = 0
     sep.ZIndex = 2
-    sep.Parent = mainframe
+    sep.Parent = mainclip
     regaccent(sep, "BackgroundColor3")
 
     -- ── tab panel (left sidebar) ─────────────────────────────────────────────────
@@ -498,14 +507,14 @@ function multihubx:createwindow(config)
     tabpanel.BackgroundColor3 = DARK2
     tabpanel.BorderSizePixel = 0
     tabpanel.ClipsDescendants = true
-    tabpanel.Parent = mainframe
+    tabpanel.Parent = mainclip
 
     local tabdiv = Instance.new("Frame")
     tabdiv.Size = UDim2.new(0, 1, 1, -(titlebarH+1))
     tabdiv.Position = UDim2.new(0, 120, 0, titlebarH+1)
     tabdiv.BackgroundColor3 = accentcolor
     tabdiv.BorderSizePixel = 0
-    tabdiv.Parent = mainframe
+    tabdiv.Parent = mainclip
     regaccent(tabdiv, "BackgroundColor3")
 
     local tablayout = Instance.new("UIListLayout")
@@ -519,7 +528,7 @@ function multihubx:createwindow(config)
     contentarea.BackgroundTransparency = 1
     contentarea.BorderSizePixel = 0
     contentarea.ClipsDescendants = true
-    contentarea.Parent = mainframe
+    contentarea.Parent = mainclip
 
     -- ── mini widget / restore ────────────────────────────────────────────────────
     local miniwidget = Instance.new("Frame")
@@ -787,7 +796,7 @@ function multihubx:createwindow(config)
         --   mybox:addslider(...)
         --
         function tab:addgroupbox(title, collapsed)
-            local isopen = not collapsed  -- open by default
+            local isopen = (collapsed == false)  -- default CLOSED unless explicitly collapsed=false
 
             -- outer wrapper (auto-sizes based on content)
             local wrapper = Instance.new("Frame")
@@ -838,9 +847,9 @@ function multihubx:createwindow(config)
             arrowlbl.Size = UDim2.new(0, 20, 1, 0)
             arrowlbl.Position = UDim2.new(1, -26, 0, 0)
             arrowlbl.BackgroundTransparency = 1
-            arrowlbl.Text = isopen and "▾" or "▸"
+            arrowlbl.Text = isopen and "-" or "+"
             arrowlbl.TextColor3 = accentcolor
-            arrowlbl.TextSize = 12
+            arrowlbl.TextSize = 14
             arrowlbl.Font = Enum.Font.GothamBold
             arrowlbl.ZIndex = 3
             arrowlbl.Parent = header
@@ -874,8 +883,7 @@ function multihubx:createwindow(config)
 
             header.MouseButton1Click:Connect(function()
                 isopen = not isopen
-                arrowlbl.Text = isopen and "▾" or "▸"
-                tweenservice:Create(arrowlbl, TweenInfo.new(0.15), { TextTransparency = 0 }):Play()
+                arrowlbl.Text = isopen and "-" or "+"
                 refreshsize()
             end)
 
@@ -1613,9 +1621,9 @@ function multihubx:createwindow(config)
 
             function target:addkeybind(cfg)
                 cfg = cfg or {}
-                local txt  = cfg.title    or "keybind"
-                local defkey = cfg.default or Enum.KeyCode.Unknown
-                local cb   = cfg.callback
+                local txt    = cfg.title    or "keybind"
+                local defkey = cfg.default  or Enum.KeyCode.Unknown
+                local cb     = cfg.callback
                 local p = (target._isGroupbox and target._page) or page
 
                 local row = Instance.new("Frame")
@@ -1626,7 +1634,7 @@ function multihubx:createwindow(config)
                 makecorner(UDim.new(0, 6), row)
 
                 local lbl = Instance.new("TextLabel")
-                lbl.Size = UDim2.new(1, -100, 1, 0)
+                lbl.Size = UDim2.new(1, -90, 1, 0)
                 lbl.Position = UDim2.new(0, 10, 0, 0)
                 lbl.BackgroundTransparency = 1
                 lbl.Text = txt
@@ -1635,22 +1643,6 @@ function multihubx:createwindow(config)
                 lbl.Font = Enum.Font.Gotham
                 lbl.TextXAlignment = Enum.TextXAlignment.Left
                 lbl.Parent = row
-
-                local togbg = Instance.new("Frame")
-                togbg.Size = UDim2.new(0, 36, 0, 18)
-                togbg.Position = UDim2.new(1, -88, 0.5, -9)
-                togbg.BackgroundColor3 = GREY5
-                togbg.BorderSizePixel = 0
-                togbg.Parent = row
-                makecorner(UDim.new(1, 0), togbg)
-
-                local circle = Instance.new("Frame")
-                circle.Size = UDim2.new(0, 12, 0, 12)
-                circle.Position = UDim2.new(0, 3, 0.5, -6)
-                circle.BackgroundColor3 = GREY1
-                circle.BorderSizePixel = 0
-                circle.Parent = togbg
-                makecorner(UDim.new(1, 0), circle)
 
                 local kbtn = Instance.new("TextButton")
                 kbtn.Size = UDim2.new(0, 76, 0, 20)
@@ -1665,34 +1657,13 @@ function multihubx:createwindow(config)
                 makecorner(UDim.new(0, 5), kbtn)
                 makestroke(GREY7, 1, kbtn)
 
-                local state = false
                 local currentkey = defkey
                 local listeningkb = false
 
-                local function setstate(v)
-                    state = v
-                    tweenservice:Create(circle, TweenInfo.new(0.12), {
-                        Position = v and UDim2.new(1,-15,0.5,-6) or UDim2.new(0,3,0.5,-6)
-                    }):Play()
-                    tweenservice:Create(togbg, TweenInfo.new(0.12), {
-                        BackgroundColor3 = v and accentcolor or GREY5
-                    }):Play()
-                    tweenservice:Create(circle, TweenInfo.new(0.12), {
-                        BackgroundColor3 = v and WHITE or GREY1
-                    }):Play()
-                    if cb then cb(v) end
-                end
-
-                local clickbtn = Instance.new("TextButton")
-                clickbtn.Size = UDim2.new(0, 42, 1, 0)
-                clickbtn.Position = UDim2.new(1, -130, 0, 0)
-                clickbtn.BackgroundTransparency = 1
-                clickbtn.Text = ""
-                clickbtn.Parent = row
-                clickbtn.MouseButton1Click:Connect(function() setstate(not state) end)
-
                 kbtn.MouseButton1Click:Connect(function()
-                    listeningkb = true; kbtn.Text = "[ ... ]"; kbtn.TextColor3 = accentcolor
+                    listeningkb = true
+                    kbtn.Text = "[ ... ]"
+                    kbtn.TextColor3 = accentcolor
                 end)
 
                 uis.InputBegan:Connect(function(inp)
@@ -1701,15 +1672,16 @@ function multihubx:createwindow(config)
                         currentkey = inp.KeyCode
                         kbtn.Text = "[ " .. inp.KeyCode.Name:lower() .. " ]"
                         kbtn.TextColor3 = GREY2
-                    elseif not listeningkb and inp.KeyCode == currentkey then
-                        setstate(not state)
+                    elseif not listeningkb
+                        and currentkey ~= Enum.KeyCode.Unknown
+                        and inp.KeyCode == currentkey then
+                        if cb then cb() end
                     end
                 end)
 
                 table.insert(keybindregistry, {
-                    title    = txt,
-                    getstate = function() return state end,
-                    getkey   = function() return currentkey.Name end,
+                    title  = txt,
+                    getkey = function() return currentkey.Name end,
                 })
             end
 
