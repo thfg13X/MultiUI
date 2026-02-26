@@ -1454,15 +1454,19 @@ function multihubx:createwindow(config)
 
             local function settogtoggle(v)
                 togstate = v
-                tweenservice:Create(circle, TweenInfo.new(0.12), {
-                    Position = v and UDim2.new(1,-15,0.5,-6) or UDim2.new(0,3,0.5,-6)
-                }):Play()
-                tweenservice:Create(togbg, TweenInfo.new(0.12), {
-                    BackgroundColor3 = v and accentcolor or GREY5
-                }):Play()
-                tweenservice:Create(circle, TweenInfo.new(0.12), {
-                    BackgroundColor3 = v and WHITE or GREY1
-                }):Play()
+                if circle and circle.Parent then
+                    tweenservice:Create(circle, TweenInfo.new(0.12), {
+                        Position = v and UDim2.new(1,-15,0.5,-6) or UDim2.new(0,3,0.5,-6)
+                    }):Play()
+                    tweenservice:Create(circle, TweenInfo.new(0.12), {
+                        BackgroundColor3 = v and WHITE or GREY1
+                    }):Play()
+                end
+                if togbg and togbg.Parent then
+                    tweenservice:Create(togbg, TweenInfo.new(0.12), {
+                        BackgroundColor3 = v and accentcolor or GREY5
+                    }):Play()
+                end
                 if cb then cb(v) end
             end
 
