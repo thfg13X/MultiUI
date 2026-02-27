@@ -596,7 +596,6 @@ function astrixhub:createwindow(config)
 
     local function collapse()
         mainframe.Visible = false
-        miniwidget.Visible = true
         restorestrip.Visible = true
         if blurenabled then
             tweenservice:Create(blureffect, TweenInfo.new(0.25), { Size = 0 }):Play()
@@ -605,7 +604,6 @@ function astrixhub:createwindow(config)
     end
 
     local function showgui()
-        miniwidget.Visible = false
         restorestrip.Visible = false
         mainframe.Visible = true
         if blurenabled then
@@ -1941,10 +1939,10 @@ function astrixhub:createwindow(config)
             end
         end
 
-        
+        -- apply element methods to the tab itself
         addElementsTo(tab)
 
-        
+        -- patch addgroupbox so groupboxes also get all element methods
         local origAddGroupbox = tab.addgroupbox
         tab.addgroupbox = function(self, title, collapsed)
             local gb = origAddGroupbox(self, title, collapsed)
