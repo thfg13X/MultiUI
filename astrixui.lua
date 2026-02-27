@@ -76,10 +76,8 @@ function astrixhub:createwindow(config)
     local kbfloat = Instance.new("Frame")
     kbfloat.Name = "keybindpanel"
     kbfloat.Size = UDim2.new(0, 200, 0, 28)
-    kbfloat.Position = UDim2.fromOffset(
-        game:GetService("Workspace").CurrentCamera.ViewportSize.X - 215,
-        math.floor(game:GetService("Workspace").CurrentCamera.ViewportSize.Y / 2) - 80
-    )
+    local _vp = game:GetService("Workspace").CurrentCamera.ViewportSize
+    kbfloat.Position = UDim2.new(0, _vp.X - 215, 0, math.floor(_vp.Y / 2) - 80)
     kbfloat.BackgroundColor3 = DARK
     kbfloat.BorderSizePixel = 0
     kbfloat.ZIndex = 30
