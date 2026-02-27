@@ -1659,6 +1659,14 @@ function astrixhub:createwindow(config)
 
                 local currentkey = defkey
                 local listeningkb = false
+                local kbstate = false
+
+                local function setkbstate(v)
+                    kbstate = v
+                    kbtn.BackgroundColor3 = v and Color3.fromRGB(40, 15, 70) or GREY6
+                    kbtn.TextColor3 = v and accentcolor or GREY2
+                    if cb then cb(v) end
+                end
 
                 kbtn.MouseButton1Click:Connect(function()
                     listeningkb = true
@@ -1671,17 +1679,18 @@ function astrixhub:createwindow(config)
                         listeningkb = false
                         currentkey = inp.KeyCode
                         kbtn.Text = "[ " .. inp.KeyCode.Name:lower() .. " ]"
-                        kbtn.TextColor3 = GREY2
+                        kbtn.TextColor3 = kbstate and accentcolor or GREY2
                     elseif not listeningkb
                         and currentkey ~= Enum.KeyCode.Unknown
                         and inp.KeyCode == currentkey then
-                        if cb then cb() end
+                        setkbstate(not kbstate)
                     end
                 end)
 
                 table.insert(keybindregistry, {
-                    title  = txt,
-                    getkey = function() return currentkey.Name end,
+                    title    = txt,
+                    getkey   = function() return currentkey.Name end,
+                    getstate = function() return kbstate end,
                 })
             end
 
