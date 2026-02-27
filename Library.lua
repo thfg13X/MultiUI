@@ -1,5 +1,5 @@
-local multihubx = {}
-multihubx.__index = multihubx
+local astrixhub = {}
+astrixhub.__index = astrixhub
 
 local tweenservice = game:GetService("TweenService")
 local uis          = game:GetService("UserInputService")
@@ -15,7 +15,7 @@ end
 
 local function makestroke(color, thickness, parent)
     local s = Instance.new("UIStroke")
-    s.Color     = color     or Color3.fromRGB(210, 25, 25)
+    s.Color     = color     or Color3.fromRGB(130, 40, 200)
     s.Thickness = thickness or 1
     s.Parent    = parent
     return s
@@ -45,16 +45,16 @@ local GREY6 = Color3.fromRGB(28,  28,  28 )
 local GREY7 = Color3.fromRGB(55,  55,  55 )
 local WHITE = Color3.fromRGB(255, 255, 255)
 
-function multihubx:createwindow(config)
+function astrixhub:createwindow(config)
     config = config or {}
-    local title     = config.title     or "multi hub x"
+    local title     = config.title     or "astrix hub"
     local subtitle  = config.subtitle  or ""
     local size      = config.size      or UDim2.new(0, 600, 0, 410)
     local togglekey = config.togglekey or Enum.KeyCode.RightShift
 
     local playergui = lp:WaitForChild("PlayerGui")
     local screengui = Instance.new("ScreenGui")
-    screengui.Name           = "multihubx_" .. title:lower():gsub("%s","")
+    screengui.Name           = "astrixhub_" .. title:lower():gsub("%s","")
     screengui.ResetOnSpawn   = false
     screengui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     screengui.Parent         = playergui
@@ -67,7 +67,7 @@ function multihubx:createwindow(config)
     local blurenabled  = false
     local blurintensity = 20
 
-    local accentcolor    = Color3.fromRGB(210, 25, 25)
+    local accentcolor    = Color3.fromRGB(130, 40, 200)
     local accentobjs     = {}
     local keybindregistry = {}
     local notifstack     = {}
@@ -367,7 +367,7 @@ function multihubx:createwindow(config)
     local yesbtn = Instance.new("TextButton")
     yesbtn.Size = UDim2.new(0.45, -4, 0, 32)
     yesbtn.Position = UDim2.new(0, 8, 0, 116)
-    yesbtn.BackgroundColor3 = Color3.fromRGB(140, 20, 20)
+    yesbtn.BackgroundColor3 = Color3.fromRGB(90, 20, 160)
     yesbtn.Text = "yes"
     yesbtn.TextColor3 = WHITE
     yesbtn.TextSize = 12
@@ -479,7 +479,7 @@ function multihubx:createwindow(config)
         return b
     end
 
-    local closebtn = maketitlebtn("×", -30, Color3.fromRGB(150, 20, 20))
+    local closebtn = maketitlebtn("×", -30, Color3.fromRGB(100, 20, 170))
     local minbtn   = maketitlebtn("−", -60, GREY7)
 
     local kbtogbtn = maketitlebtn("kb", -92, GREY7)
@@ -488,7 +488,7 @@ function multihubx:createwindow(config)
     kbtogbtn.MouseButton1Click:Connect(function()
         kbpanelopen = not kbpanelopen
         kbfloat.Visible = kbpanelopen
-        kbtogbtn.BackgroundColor3 = kbpanelopen and Color3.fromRGB(30, 10, 10) or GREY7
+        kbtogbtn.BackgroundColor3 = kbpanelopen and Color3.fromRGB(30, 10, 60) or GREY7
     end)
 
     local sep = Instance.new("Frame")
@@ -548,7 +548,7 @@ function multihubx:createwindow(config)
     minilbl.Size = UDim2.new(1, 0, 0.6, 0)
     minilbl.Position = UDim2.new(0, 0, 0.1, 0)
     minilbl.BackgroundTransparency = 1
-    minilbl.Text = "m-x"
+    minilbl.Text = "a-h"
     minilbl.TextColor3 = accentcolor
     minilbl.TextSize = 12
     minilbl.Font = Enum.Font.GothamBold
@@ -1118,7 +1118,7 @@ function multihubx:createwindow(config)
                 regaccent(bs, "Color")
 
                 btn2.MouseButton1Click:Connect(function()
-                    tweenservice:Create(btn2, TweenInfo.new(0.1), { BackgroundColor3 = Color3.fromRGB(30,10,10) }):Play()
+                    tweenservice:Create(btn2, TweenInfo.new(0.1), { BackgroundColor3 = Color3.fromRGB(30,10,60) }):Play()
                     task.wait(0.15)
                     tweenservice:Create(btn2, TweenInfo.new(0.1), { BackgroundColor3 = DARK4 }):Play()
                     if cb then cb() end
@@ -1147,7 +1147,7 @@ function multihubx:createwindow(config)
                 regaccent(bs, "Color")
 
                 btn2.MouseButton1Click:Connect(function()
-                    tweenservice:Create(btn2, TweenInfo.new(0.1), { BackgroundColor3 = Color3.fromRGB(30,10,10) }):Play()
+                    tweenservice:Create(btn2, TweenInfo.new(0.1), { BackgroundColor3 = Color3.fromRGB(30,10,60) }):Play()
                     task.wait(0.15)
                     tweenservice:Create(btn2, TweenInfo.new(0.1), { BackgroundColor3 = DARK4 }):Play()
                     cpwarn.Text = warn
@@ -1432,7 +1432,7 @@ function multihubx:createwindow(config)
                 local pclosebtn = Instance.new("TextButton")
                 pclosebtn.Size = UDim2.new(0, 18, 0, 18)
                 pclosebtn.Position = UDim2.new(1, -22, 0, 4)
-                pclosebtn.BackgroundColor3 = Color3.fromRGB(60,10,10)
+                pclosebtn.BackgroundColor3 = Color3.fromRGB(60,10,100)
                 pclosebtn.Text = "×"; pclosebtn.TextColor3 = WHITE
                 pclosebtn.TextSize = 10; pclosebtn.Font = Enum.Font.GothamBold
                 pclosebtn.BorderSizePixel = 0; pclosebtn.ZIndex = 202; pclosebtn.Parent = popup
@@ -1970,4 +1970,4 @@ function multihubx:createwindow(config)
     return window
 end
 
-return multihubx
+return astrixhub
